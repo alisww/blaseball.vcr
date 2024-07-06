@@ -130,6 +130,7 @@ async fn run<T: vhs_diff::Diff + Clone + serde::de::DeserializeOwned + serde::Se
             count: 1000,
             at: None,
             before: None,
+            game_id: None
         },
     )
     .await?
@@ -162,7 +163,8 @@ async fn run<T: vhs_diff::Diff + Clone + serde::de::DeserializeOwned + serde::Se
                 order: Some("asc".to_owned()),
                 count: 1000,
                 at: None,
-                before: Some(String::from("2023-06-14T02:28:48.514Z")),
+                game_id: None,
+                before: None
             },
         )
         .await?

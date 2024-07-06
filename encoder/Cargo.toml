@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-zstd = { version = "0.11", features = ["experimental", "zdict_builder"] }
+zstd = { version = "0.13", features = ["experimental", "zdict_builder"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1.0.64", features = ["raw_value"] }
 anyhow = "1"
@@ -16,7 +16,7 @@ indicatif = "0.17.0-beta.1"
 clap = "2.33.3"
 tempfile = "3.3.0"
 vhs-diff = { git = "https://github.com/emily-signet/vhs-diff.git" }
-rmp-serde = "=1.0.0"
+rmp-serde = "=0.15"
 bsdiff = "0.1.6"
 perfect-map = { git = "https://github.com/emily-signet/perfect-map.git", version = "0.1.0" }
 vcr-lookups = { path = "../vcr-lookups" }

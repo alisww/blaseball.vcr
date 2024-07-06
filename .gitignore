@@ -29,3 +29,5 @@ feed.aux
 all_games.zstd
 .vscode
 data/
+games.json
+vcr_games.zstd

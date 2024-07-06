@@ -51,7 +51,8 @@ async fn run(matches: ArgMatches<'_>) -> VCRResult<()> {
             order: Some("asc".to_owned()),
             count: 1000,
             at: None,
-            before: Some(String::from("2023-06-14T02:28:48.514Z")),
+            before: None,
+            game_id: None
         },
     )
     .await?

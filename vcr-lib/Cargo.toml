@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-rmp-serde = "1.0.0"
+rmp-serde = "=0.15"
 thiserror = "1.0"
 memmap2 = "0.5.0"
 bsdiff = "0.1.6"
@@ -36,7 +36,7 @@ version = "0.8.5"
 features = ["xxh3"]
 
 [dependencies.zstd]
-version = "0.11"
+version = "0.13"
 features = ["experimental", "zdict_builder"]
 
 [dependencies.rocket]

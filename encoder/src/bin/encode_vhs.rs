@@ -132,7 +132,7 @@ async fn run<
             id: None,
             order: None,
             count: 1000,
-            // at: Some(String::from("2021-09-01T00:00:00Z")),
+            game_id: None,
             at: None,
             before: None,
         },
@@ -168,7 +168,8 @@ async fn run<
                 order: Some("asc".to_owned()),
                 count: 1000,
                 at: None,
-                before: Some(String::from("2023-06-14T02:28:48.514Z")),
+                before: None,
+                game_id: None
             },
         )
         .await?

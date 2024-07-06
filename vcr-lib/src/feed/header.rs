@@ -47,8 +47,8 @@ pub struct PackedHeader {
 
 impl PackedHeader {
     pub fn encode(headers: Vec<EncodedBlockHeader>) -> PackedHeader {
-        let mut block_compressor = Compressor::new();
-        let mut event_compressor = Compressor::new();
+        let mut block_compressor = Compressor::new(1000);
+        let mut event_compressor = Compressor::new(1000);
         let mut event = 0;
 
         for EncodedBlockHeader {

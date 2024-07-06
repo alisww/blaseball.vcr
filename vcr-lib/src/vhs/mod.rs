@@ -94,7 +94,7 @@ impl From<SingleValueRow> for i64 {
 }
 
 fn compress_rows<T: Into<SingleValueRow>>(rows: impl IntoIterator<Item = T>) -> BitVec<u8> {
-    let mut compressor = Compressor::new();
+    let mut compressor = Compressor::new(10000);
     for row in rows {
         compressor.compress(row.into());
     }
