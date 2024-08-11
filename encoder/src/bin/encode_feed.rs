@@ -67,7 +67,7 @@ fn main() -> VCRResult<()> {
                 println!("reason: tournament")
             }
 
-            recorder.add_chunk(chunk.drain(..).collect(), current_meta)?;
+            recorder.add_chunk(std::mem::take(&mut chunk), current_meta)?;
             i += 1;
         }
 

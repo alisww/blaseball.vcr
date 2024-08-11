@@ -1,4 +1,5 @@
 use std::{cmp, collections::BTreeMap};
+use borsh::BorshSerialize;
 
 use serde::{
     ser::{SerializeSeq, SerializeStruct},
@@ -8,7 +9,8 @@ use smallvec::SmallVec;
 use vcr_lookups::{UuidShell, UuidTag};
 
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(BorshSerialize, Clone, Copy, PartialEq, Eq)]
+// #[serde(deny_unknown_fields)]
 pub struct TributeValue(pub i64, pub bool);
 
 impl PartialOrd for TributeValue {
@@ -23,7 +25,8 @@ impl Ord for TributeValue {
     }
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(BorshSerialize, Clone, PartialEq, Eq)]
+// #[serde(deny_unknown_fields)]
 pub enum Tributes {
     Players(BTreeMap<u16, TributeValue>),
     PlayersAndTeams {

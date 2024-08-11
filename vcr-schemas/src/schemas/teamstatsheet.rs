@@ -1,7 +1,9 @@
 use serde::*;
 use vhs_diff::*;
+use borsh::BorshSerialize;
 
-#[derive(Serialize, Deserialize, Diff, Patch, Clone, Debug)]
+#[derive(BorshSerialize, Serialize, Deserialize, Diff, Patch, Clone, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Teamstatsheet {
     #[serde(rename = "created")]
     pub created: Option<String>,
@@ -22,6 +24,7 @@ pub struct Teamstatsheet {
     pub player_stats: Vec<String>,
 
     #[serde(rename = "seasonId")]
+    #[borsh(serialize_with = "crate::serde_json_borsh::serialize_json_value_opt")]
     pub season_id: Option<serde_json::Value>,
 
     #[serde(rename = "teamId")]

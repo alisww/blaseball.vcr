@@ -23,4 +23,5 @@ def build_dicts(args):
             cmd.extend(["-c", str(conf['checkpoint'])])
 
         cmd.extend(["-o", out_path, type_name])
+        print(cmd)
         subprocess.run(cmd)

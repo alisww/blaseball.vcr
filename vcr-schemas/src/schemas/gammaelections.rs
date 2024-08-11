@@ -1,7 +1,9 @@
 
 use serde::{Serialize, Deserialize};
+use borsh::BorshSerialize;
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff, Debug)]
+#[serde(deny_unknown_fields)]
 #[serde(transparent)]
 #[repr(transparent)]
 pub struct Gammaelections {
@@ -9,7 +11,8 @@ pub struct Gammaelections {
 }
 // pub type Gammaelections = Vec<Gammaelection>;
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff, Debug)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct Gammaelection {
     pub choice_type: String,
@@ -23,7 +26,7 @@ pub struct Gammaelection {
     pub icon: String,
 
     pub id: String,
-
+    #[borsh(serialize_with = "crate::serde_json_borsh::serialize_json_value_opt")]
     pub maximum_allowed: Option<serde_json::Value>,
 
     pub name: String,

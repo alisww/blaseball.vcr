@@ -1,7 +1,9 @@
 use vcr_lookups::UuidShell;
 use serde::{Serialize, Deserialize};
+use borsh::BorshSerialize;
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff, Debug)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct Player {
     #[serde(alias = "_id")]
@@ -126,7 +128,8 @@ pub struct Player {
     pub week_attr: Option<Vec<String>>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 #[serde(untagged)]
 pub enum ItemElement {
     ItemClass(ItemClass),
@@ -134,7 +137,8 @@ pub enum ItemElement {
     String(String),
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct ItemClass {
     pub baserunning_rating: Option<f64>,
@@ -142,9 +146,11 @@ pub struct ItemClass {
     pub defense_rating: Option<f64>,
 
     pub durability: i64,
-
+    
+    #[borsh(serialize_with = "crate::serde_json_borsh::serialize_json_value_opt")]
     pub forger: Option<serde_json::Value>,
 
+    #[borsh(serialize_with = "crate::serde_json_borsh::serialize_json_value_opt")]
     pub forger_name: Option<serde_json::Value>,
 
     pub health: i64,
@@ -170,14 +176,16 @@ pub struct ItemClass {
     pub suffix: Option<Suffix>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct PostPrefix {
     pub adjustments: Vec<PostPrefixAdjustment>,
 
     pub name: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct PostPrefixAdjustment {
     #[serde(rename = "mod")]
     pub adjustment_mod: Option<String>,
@@ -190,14 +198,16 @@ pub struct PostPrefixAdjustment {
     pub value: Option<f64>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct PrePrefix {
     pub adjustments: Vec<PrePrefixAdjustment>,
 
     pub name: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct PrePrefixAdjustment {
     pub stat: i64,
 
@@ -207,14 +217,16 @@ pub struct PrePrefixAdjustment {
     pub value: f64,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Prefix {
     pub adjustments: Vec<PrefixAdjustment>,
 
     pub name: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct PrefixAdjustment {
     #[serde(rename = "mod")]
     pub adjustment_mod: Option<String>,
@@ -227,14 +239,16 @@ pub struct PrefixAdjustment {
     pub value: Option<f64>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Root {
     pub adjustments: Vec<RootAdjustment>,
 
     pub name: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct RootAdjustment {
     pub stat: i64,
 
@@ -244,19 +258,22 @@ pub struct RootAdjustment {
     pub value: f64,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct ItemState {
     pub original: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Suffix {
     pub adjustments: Vec<SuffixAdjustment>,
 
     pub name: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct SuffixAdjustment {
     #[serde(rename = "mod")]
     pub adjustment_mod: Option<String>,
@@ -269,7 +286,8 @@ pub struct SuffixAdjustment {
     pub value: Option<f64>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct PlayerState {
     pub cut_this_election: Option<bool>,
@@ -303,20 +321,23 @@ pub struct PlayerState {
     pub unscattered_name: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Elsewhere {
     pub day: i64,
 
     pub season: i64,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub struct GameModSources {
     pub overperforming: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub struct ItemModSources {
     pub ambitious: Option<Vec<String>>,
@@ -408,7 +429,8 @@ pub struct ItemModSources {
     pub unfreezable: Option<Vec<String>>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub struct PermModSources {
     pub affinity_for_crows: Option<Vec<String>>,
@@ -512,7 +534,8 @@ pub struct PermModSources {
     pub yolked: Option<Vec<String>>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub struct SeasModSources {
     pub alternate: Option<Vec<String>>,

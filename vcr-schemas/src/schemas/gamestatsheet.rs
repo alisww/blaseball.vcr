@@ -1,7 +1,9 @@
 use serde::*;
 use vhs_diff::*;
+use borsh::BorshSerialize;
 
-#[derive(Serialize, Deserialize, Diff, Patch, Clone, Debug)]
+#[derive(BorshSerialize, Serialize, Deserialize, Diff, Patch, Clone, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Gamestatsheet {
     #[serde(rename = "awayTeamRunsByInning")]
     pub away_team_runs_by_inning: Vec<f64>,

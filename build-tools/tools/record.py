@@ -6,7 +6,7 @@ def record_tapes(args):
     binary = os.path.join(args.conf["target"]["binaries"], "encode_vhs")
     for i, (type_name, conf) in enumerate(args.types.items()):
         print(
-            f"{attr(1)}-// building dict for {type_name}! ({i+1}/{len(args.types)}) -//{attr(0)}"
+            f"{attr(1)}-// recording tape for {type_name}! ({i+1}/{len(args.types)}) -//{attr(0)}"
         )
         
         out_path = os.path.join(args.conf["target"]["tapes"], f"{type_name}.vhs")
@@ -20,6 +20,8 @@ def record_tapes(args):
             dict_path = os.path.join(args.conf["target"]["dicts"], f"{type_name}.dict")
             cmd.extend(["-d", dict_path])
 
+        cmd.extend(["--table", args.conf["target"]["redb"]])
         cmd.extend(["-o", out_path, type_name])
+        
 
         subprocess.run(cmd)

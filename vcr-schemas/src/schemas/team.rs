@@ -1,8 +1,10 @@
 use vcr_lookups::UuidShell;
 use serde::{Serialize, Deserialize};
 use uuid::Uuid;
+use borsh::BorshSerialize;
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff, Debug)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct Team {
     #[serde(rename = "_id")]
@@ -49,7 +51,8 @@ pub struct Team {
 
     pub nickname: String,
 
-    pub permanent_attributes: Option<Vec<Option<serde_json::Value>>>,
+    #[borsh(serialize_with = "crate::serde_json_borsh::serialize_json_value_vecopt")]
+    pub permanent_attributes: Option<Vec<serde_json::Value>>,
 
     pub perm_attr: Option<Vec<String>>,
 
@@ -96,7 +99,14 @@ pub struct Team {
     pub win_streak: Option<i64>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+impl Team {
+    pub fn id(&self) -> Uuid {
+        self.id.or(self.team_id).unwrap().as_uuid()
+    }
+}
+
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 #[serde(untagged)]
 pub enum ImPosition {
     Double(f64),
@@ -104,7 +114,8 @@ pub enum ImPosition {
     DoubleArray(Vec<f64>),
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct State {
     pub donated_shame: Option<f64>,
@@ -132,13 +143,15 @@ pub struct State {
     pub stolen_players: Option<Vec<StolenPlayer>>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct FaxMachine {
     pub runs_needed: i64,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub struct GameModSources {
     #[serde(rename = "0")]
@@ -235,7 +248,8 @@ pub struct GameModSources {
     pub unholey: Option<Vec<String>>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct ImpMotion {
     pub day: i64,
@@ -245,7 +259,8 @@ pub struct ImpMotion {
     pub season: i64,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub struct PermModSources {
     pub overperforming: Option<Vec<String>>,
@@ -253,7 +268,8 @@ pub struct PermModSources {
     pub underperforming: Option<Vec<String>>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct Scattered {
     pub full_name: String,
@@ -263,7 +279,8 @@ pub struct Scattered {
     pub nickname: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct StolenPlayer {
     pub id: String,

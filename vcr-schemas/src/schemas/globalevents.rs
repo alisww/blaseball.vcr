@@ -1,7 +1,9 @@
 
 use serde::{Serialize, Deserialize};
+use borsh::BorshSerialize;
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff, Debug)]
+#[serde(deny_unknown_fields)]
 #[repr(transparent)]
 #[serde(transparent)]
 pub struct GlobaleventsWrapper {
@@ -10,7 +12,8 @@ pub struct GlobaleventsWrapper {
 
 pub type Globalevents = Vec<Globalevent>;
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Globalevent {
     #[serde(rename = "__v")]
     pub v: Option<i64>,

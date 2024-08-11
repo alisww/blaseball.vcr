@@ -67,6 +67,8 @@ pub use thebook::*;
 use serde::ser::{Serialize, Serializer};
 use std::str::FromStr;
 
+use borsh::{BorshDeserialize, BorshSerialize};
+use strum::FromRepr;
 // use self::globalevents::GlobaleventsWrapper;
 
 #[macro_export]
@@ -80,6 +82,8 @@ macro_rules! etypes {
             )*
         }
 
+        #[repr(u8)]
+        #[derive(BorshSerialize, Clone, Copy, BorshDeserialize, PartialEq, Debug, PartialOrd, Eq, FromRepr)]
         pub enum DynamicEntityType {
             $(
                 $variant,
@@ -98,7 +102,7 @@ macro_rules! etypes {
             fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer, {
                 match self {
                     $(
-                        DynamicEntity::$variant(data) => data.serialize(serializer),
+                        DynamicEntity::$variant(data) => <$what as serde::Serialize>::serialize(data, serializer),
                     )*
                 }
             }

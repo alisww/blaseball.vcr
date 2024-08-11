@@ -1,14 +1,17 @@
 
 use serde::{Serialize, Deserialize};
+use borsh::BorshSerialize;
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff, Debug)]
+#[serde(deny_unknown_fields)]
 #[repr(transparent)]
 #[serde(transparent)]
 pub struct Gammaelectionresults {
     inner: Vec<Gammaelectionresult>
 } 
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff, Debug)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct Gammaelectionresult {
     pub blurb: String,
@@ -23,7 +26,8 @@ pub struct Gammaelectionresult {
 
     pub election_option_id: String,
 
-    pub game_tags: Vec<Option<serde_json::Value>>,
+    #[borsh(serialize_with = "crate::serde_json_borsh::serialize_json_value_vec")]
+    pub game_tags: Vec<serde_json::Value>,
 
     pub id: String,
 
@@ -39,7 +43,9 @@ pub struct Gammaelectionresult {
 
     pub sim: String,
 
-    pub team_tags: Vec<Option<serde_json::Value>>,
+    #[borsh(serialize_with = "crate::serde_json_borsh::serialize_json_value_vec")]
+
+    pub team_tags: Vec<serde_json::Value>,
 
     pub tournament: i64,
 
@@ -47,7 +53,8 @@ pub struct Gammaelectionresult {
     pub gammaelectionresult_type: i64,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct Metadata {
     pub after: Option<f64>,
@@ -63,7 +70,8 @@ pub struct Metadata {
     #[serde(rename = "mod")]
     pub metadata_mod: Option<String>,
 
-    pub mods: Option<Vec<Option<serde_json::Value>>>,
+    #[borsh(serialize_with = "crate::serde_json_borsh::serialize_json_value_vecopt")]
+    pub mods: Option<Vec<serde_json::Value>>,
 
     pub player_item_rating_after: Option<f64>,
 

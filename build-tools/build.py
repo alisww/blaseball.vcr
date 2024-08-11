@@ -15,6 +15,7 @@ def parse_config(file_path):
                 "dicts": doc["target"]["dicts"].args[0],
                 "schemas": doc["target"]["schemas"].args[0],
                 "binaries": doc["target"]["binaries"].args[0],
+                "redb": doc["target"]["log_redb"].args[0]
             },
             "types": {
                 child.name: {

@@ -1,12 +1,15 @@
 
 use serde::{Serialize, Deserialize};
+use borsh::BorshSerialize;
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Thebook {
     pub collection: Vec<Collection>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Collection {
     pub footer: Footer,
 
@@ -17,7 +20,8 @@ pub struct Collection {
     pub sections: Vec<Section>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Footer {
     pub header: String,
 
@@ -26,14 +30,16 @@ pub struct Footer {
     pub text: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Header {
     pub aria: String,
 
     pub title: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Section {
     pub bullet: String,
 

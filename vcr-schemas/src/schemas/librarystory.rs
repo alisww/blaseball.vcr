@@ -1,21 +1,25 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use vhs_diff::{Diff, Patch};
+use borsh::BorshSerialize;
 
-#[derive(Diff, Patch, Clone, Serialize, Deserialize)]
+#[derive(BorshSerialize, Diff, Patch, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 #[serde(transparent)]
 pub struct LibrarystoryWrapper {
     inner: Vec<LibrarystoryElement>,
 }
 
-#[derive(PartialEq, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[derive(BorshSerialize, PartialEq, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
 pub struct LibrarystoryElement {
     pub category: i64,
     pub created: String,
     pub day: i64,
     pub description: String,
-    pub game_tags: Option<Vec<Option<serde_json::Value>>>,
+    #[borsh(serialize_with = "crate::serde_json_borsh::serialize_json_value_vecopt")]
+    pub game_tags: Option<Vec<serde_json::Value>>,
     pub id: Uuid,
     pub metadata: Metadata,
     pub nuts: i64,
@@ -28,8 +32,9 @@ pub struct LibrarystoryElement {
     pub librarystory_type: i64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[derive(BorshSerialize, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
 pub struct Metadata {
     pub add_location: Option<i64>,
     pub add_player_id: Option<String>,
@@ -118,7 +123,8 @@ pub struct Metadata {
     pub winner: Option<String>,
 }
 
-#[derive(PartialEq, Clone, Serialize, Deserialize)]
+#[derive(BorshSerialize, PartialEq, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 #[serde(untagged)]
 pub enum Being {
     Integer(i64),

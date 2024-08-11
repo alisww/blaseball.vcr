@@ -30,6 +30,10 @@ rmpv = { version = "1.0.0", features = ["serde", "with-serde"] }
 tsz-compress = "1.0.5"
 bitvec = { version = "1.0.1", features = ["serde"] }
 itertools = "0.11.0"
+redb = "2.1.1"
+borsh = "1.5.1"
+derivative = "2.2.0"
+bitcode = "0.6.3"
 
 [dependencies.xxhash-rust]
 version = "0.8.5"
@@ -44,7 +48,7 @@ version = "0.5.0-rc.2"
 optional = true
 
 [dependencies.uuid]
-version = "1.0"
+version = "1.10"
 features = ["serde"]
 
 

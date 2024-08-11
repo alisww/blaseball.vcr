@@ -1,9 +1,11 @@
 use blaseball_vcr::vhs::recorder::*;
 use blaseball_vcr::{RawChroniclerEntity, VCRResult};
+use borsh::BorshSerialize;
 use clap::{clap_app, ArgMatches};
 use indicatif::{MultiProgress, MultiProgressAlignment, ProgressBar, ProgressStyle};
 use new_encoder::*;
 use std::fs::File;
+use std::str::FromStr;
 use vcr_schemas::*;
 
 #[tokio::main]
@@ -12,6 +14,7 @@ pub async fn main() -> VCRResult<()> {
         (version: "1.0")
         (author: "emily signet <emily@sibr.dev>")
         (about: "blaseball.vcr gen 2 encoder")
+        (@arg ENTITY_LOCATION_TABLE: -t --table [LOCATION_DB] "database file for entity locations by entity hash")
         (@arg CHECKPOINT_EVERY: -c --checkpoints [CHECKPOINT_FREQUENCY] "how often should the diff engine create a checkpoint it can skip to?")
         (@arg COMPRESSION_LEVEL: -l --level [LEVEL] "set compression level")
         (@arg OUTPUT: +required -o --output [FILE] "set output file for tape")
@@ -93,7 +96,8 @@ async fn run<
         + Sync
         + serde::de::DeserializeOwned
         + serde::Serialize
-        + Clone,
+        + Clone
+        + BorshSerialize,
 >(
     etype: String,
     matches: ArgMatches<'_>,
@@ -107,6 +111,7 @@ async fn run<
     };
 
     let mut recorder: TapeRecorder<T, File> = TapeRecorder::new(
+        DynamicEntityType::from_str(&etype).unwrap(),
         tempfile::tempfile()?,
         dict.clone(),
         matches
@@ -118,6 +123,10 @@ async fn run<
             .and_then(|v| v.parse::<usize>().ok())
             .unwrap_or(u16::MAX as usize),
     )?;
+
+    let mut hash_db = redb::Database::create(matches.value_of("ENTITY_LOCATION_TABLE").unwrap())?;
+    let write_txn = hash_db.begin_write()?;
+    let mut hash_table = write_txn.open_table(HASH_TO_ENTITY_TABLE)?;
 
     let bars = MultiProgress::new();
     bars.set_alignment(MultiProgressAlignment::Top);
@@ -169,7 +178,7 @@ async fn run<
                 count: 1000,
                 at: None,
                 before: None,
-                game_id: None
+                game_id: None,
             },
         )
         .await?
@@ -184,12 +193,16 @@ async fn run<
         .collect();
 
         if !entity_versions.is_empty() {
-            recorder.add_entity(TapeEntity::from(entity_versions))?;
+            recorder.add_entity(TapeEntity::from(entity_versions), &mut hash_table)?;
         }
     }
 
     let (header, mut main) = recorder.finish()?;
     let out = std::fs::File::create(matches.value_of("OUTPUT").unwrap())?;
+
+    drop(hash_table);
+    write_txn.commit()?;
+    hash_db.compact()?;
 
     use std::io::Seek;
     main.rewind()?;

@@ -12,7 +12,7 @@ use zstd::dict::DecoderDictionary;
 
 use crate::VCRResult;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct DataHeader {
     pub id: [u8; 16],
     pub times: Vec<i64>,
@@ -24,6 +24,39 @@ pub struct DataHeader {
 }
 
 impl DataHeader {
+    // doesn't check wheter time is before at
+    pub fn find_time_unchecked(&self, at: i64) -> usize {
+        match self.times.binary_search(&at) {
+            Ok(i) => i,
+            Err(i) => {
+                if i > 0 {
+                    i - 1
+                } else {
+                    i
+                }
+            }
+        }
+    }
+
+    pub fn find_time(&self, at: i64) -> Option<usize> {
+        let index = match self.times.binary_search(&at) {
+            Ok(i) => i,
+            Err(i) => {
+                if i > 0 {
+                    i - 1
+                } else {
+                    i
+                }
+            }
+        };
+
+        if self.times[index] > at {
+            None
+        } else {
+            Some(index)
+        }
+    }
+
     pub fn encode(self) -> CompressedDataHeader {
         CompressedDataHeader {
             id: self.id,

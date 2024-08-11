@@ -1,12 +1,15 @@
 
 use serde::{Serialize, Deserialize};
+use borsh::BorshSerialize;
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Feedseasonlist {
     pub collection: Vec<Collection>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Collection {
     pub index: i64,
 

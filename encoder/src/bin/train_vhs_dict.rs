@@ -130,7 +130,7 @@ async fn run<T: vhs_diff::Diff + Clone + serde::de::DeserializeOwned + serde::Se
             count: 1000,
             at: None,
             before: None,
-            game_id: None
+            game_id: None,
         },
     )
     .await?
@@ -164,7 +164,7 @@ async fn run<T: vhs_diff::Diff + Clone + serde::de::DeserializeOwned + serde::Se
                 count: 1000,
                 at: None,
                 game_id: None,
-                before: None
+                before: None,
             },
         )
         .await?

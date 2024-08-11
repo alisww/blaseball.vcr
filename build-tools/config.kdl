@@ -3,6 +3,7 @@ target {
     dicts "../data/dist/vhs-dicts/"
     schemas "../vcr-schemas/src/schemas/"
     binaries "../target/release/"
+    log_redb "../data/dist/vhs.redb"
 }
 
 entities {

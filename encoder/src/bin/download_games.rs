@@ -1,15 +1,13 @@
-use blaseball_vcr::vhs::recorder::*;
-use blaseball_vcr::{timestamp_to_nanos, VCRResult};
+use blaseball_vcr::VCRResult;
+use futures_util::StreamExt;
 use indicatif::{MultiProgress, MultiProgressAlignment, ProgressBar, ProgressStyle};
 use new_encoder::*;
-use uuid::Uuid;
-use vcr_schemas::game::GameUpdate;
 
 use tokio::fs::File;
-use tokio::io::{self, AsyncWriteExt, BufReader, BufWriter};
+use tokio::io::{AsyncWriteExt, BufWriter};
 
 use clap::clap_app;
-use zstd::bulk::{Compressor, Decompressor};
+use zstd::bulk::Compressor;
 
 #[tokio::main]
 async fn main() -> VCRResult<()> {
@@ -27,34 +25,48 @@ async fn main() -> VCRResult<()> {
     bars.set_alignment(MultiProgressAlignment::Top);
     let client = reqwest::Client::new();
 
-
     let bar_style = ProgressStyle::default_bar()
         .template("{msg:.bold} - {pos}/{len} {wide_bar:40.green/white}")
         .unwrap();
 
-    let games: ChroniclerV1Response<ChronV1Game> = serde_json::from_slice(&std::fs::read(matches.value_of("INPUT").unwrap())?)?;
+    let games: ChroniclerV1Response<ChronV1Game> =
+        serde_json::from_slice(&std::fs::read(matches.value_of("INPUT").unwrap())?)?;
     let games = games.data;
+    let games_len = games.len();
+    println!("found {}", games_len);
 
-    println!("found {}", games.len());
+    let mut game_stream = futures_util::stream::iter(games.into_iter().map(|g| g.game_id))
+        .map(|id| {
+            v1_get_game_updates(
+                &client,
+                "https://api.sibr.dev/chronicler/v1/games/updates",
+                id,
+            )
+        })
+        .buffered(1024);
 
-    let downloads_bar = bars.add(ProgressBar::new(games.len() as u64).with_style(bar_style).with_message("downloading games"));
+    let downloads_bar = bars.add(
+        ProgressBar::new(games_len as u64)
+            .with_style(bar_style)
+            .with_message("downloading games"),
+    );
 
     let mut compressor = Compressor::new(8)?;
 
-    for game in games {
-        downloads_bar.set_message(format!("downloading {}", game.game_id));
-        let game = v1_get_game_updates(&client, "https://api.sibr.dev/chronicler/v1/games/updates", game.game_id, &bars).await?;
-        
+    while let Some(game) = game_stream.next().await {
+        let game = game?;
+
         let data = serde_json::to_vec(&game)?;
         let compressed = compressor.compress(&data)?;
-
         out.write_u64_le(compressed.len() as u64).await?;
         out.write_u64_le(data.len() as u64).await?;
         out.write_all(&compressed).await?;
 
         downloads_bar.inc(1);
     }
-    
+
+    out.shutdown().await?;
+
     // let mut compressor = games.
     // let mut len_buf: [u8; 8] = [0; 8];
     // if let Err(e) = reader.read_exact(&mut len_buf) {

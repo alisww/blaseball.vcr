@@ -1,3 +1,4 @@
+use borsh::BorshSerialize;
 use serde::{de::IntoDeserializer, Deserialize, Serialize, Serializer};
 use std::hash::Hash;
 use uuid::Uuid;
@@ -8,6 +9,12 @@ use crate::lookups::{GAME_ID_TABLE, PLAYER_ID_TABLE, TEAM_ID_TABLE};
 pub enum UuidShell {
     RawUuid(Uuid),
     Tagged(UuidTag),
+}
+
+impl BorshSerialize for UuidShell {
+    fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
+        <Uuid as BorshSerialize>::serialize(&self.as_uuid(), writer)
+    }
 }
 
 impl PartialEq for UuidShell {
@@ -87,7 +94,7 @@ impl Serialize for UuidShell {
 
         // if it's not human readable..
         match self {
-            UuidShell::RawUuid(tag) => tag.serialize(serializer),
+            UuidShell::RawUuid(tag) => <Uuid as serde::Serialize>::serialize(tag, serializer),
             UuidShell::Tagged(tag) => tag.serialize(serializer),
         }
     }

@@ -30,6 +30,20 @@ pub enum VCRError {
     #[error(transparent)]
     UTF8Error(#[from] std::string::FromUtf8Error),
     #[error(transparent)]
+    REDBError(#[from] redb::Error),
+    #[error(transparent)]
+    REDBStorageError(#[from] redb::StorageError),
+    #[error(transparent)]
+    REDBDatabaseError(#[from] redb::DatabaseError),
+    #[error(transparent)]
+    REDBTransactionError(#[from] redb::TransactionError),
+    #[error(transparent)]
+    REDBTableError(#[from] redb::TableError),
+    #[error(transparent)]
+    REDBCompactionError(#[from] redb::CompactionError),
+    #[error(transparent)]
+    REDBCommitError(#[from] redb::CommitError),
+    #[error(transparent)]
     Other(#[from] anyhow::Error),
     #[error("error occurred inside parallel processing block")]
     ParallelError,

@@ -1,7 +1,8 @@
 
 use serde::{Serialize, Deserialize};
+use borsh::BorshSerialize;
 
-// #[derive(Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff)]
+// #[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff, Debug)]
 // #[repr(transparent)]
 // #[serde(transparent)]
 // pub struct Gammaelectiondetails {
@@ -10,9 +11,10 @@ use serde::{Serialize, Deserialize};
 
 // // pub type Gammaelectiondetails = Vec<Gammaelectiondetail>;
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff, Debug)]
 #[serde(transparent)]
 #[repr(transparent)]
 pub struct Gammaelectiondetails {
+    #[borsh(serialize_with = "crate::serde_json_borsh::serialize_json_value")]
     inner: serde_json::Value
 }

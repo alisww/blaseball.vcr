@@ -21,6 +21,7 @@ use zstd::dict::DecoderDictionary;
 type RangeTuple = (usize, usize);
 
 pub struct Database<T: Clone + Patch + Send + Sync> {
+    pub headers: Vec<DataHeader>,
     pub index: HashMap<[u8; 16], DataHeader>,
     pub id_list: Vec<[u8; 16]>,
     inner: Mmap,
@@ -50,10 +51,12 @@ impl<T: Clone + Patch + DeserializeOwned + Send + Sync + serde::Serialize> Datab
             mmap.map(&database_f)?
         };
 
-        let index: HashMap<[u8; 16], DataHeader> = headers.into_iter().map(|v| (v.id, v)).collect();
+        let index: HashMap<[u8; 16], DataHeader> =
+            headers.iter().cloned().map(|v| (v.id, v)).collect();
         let id_list = index.keys().copied().collect();
 
         Ok(Database {
+            headers,
             index,
             id_list,
             decoder: Some(DecoderDictionary::copy(&dict)),
@@ -81,17 +84,22 @@ impl<T: Clone + Patch + DeserializeOwned + Send + Sync + serde::Serialize> Datab
     }
 
     #[inline(always)]
-    pub fn get_all_entities(&self, at: i64) -> VCRResult<Vec<OptionalEntity<T>>> {
-        self.get_entities_parallel(&self.id_list, at)
+    pub fn get_all_entities(
+        &self,
+        at: i64,
+        enforce_start_time: bool,
+    ) -> VCRResult<Vec<OptionalEntity<T>>> {
+        self.get_entities_parallel_by_id(&self.id_list, at, enforce_start_time)
     }
 
-    pub fn get_entities_parallel(
+    pub fn get_entities_parallel_by_header(
         &self,
-        ids: &[[u8; 16]],
+        headers: &[Option<&DataHeader>],
         at: i64,
+        _enforce_start_time: bool,
     ) -> VCRResult<Vec<OptionalEntity<T>>> {
         crossbeam::scope(|s| {
-            let chunks = ids.chunks(ids.len() / num_cpus::get());
+            let chunks = headers.chunks(headers.len() / num_cpus::get());
             let n_chunks = chunks.len();
             let (tx, rx) = channel::unbounded();
 
@@ -105,7 +113,54 @@ impl<T: Clone + Patch + DeserializeOwned + Send + Sync + serde::Serialize> Datab
                 s.spawn(move |_| {
                     let data = chunk
                         .iter()
-                        .map(|id| self.get_entity_inner(id, at, &mut decompressor))
+                        .map(|header| {
+                            let Some(header) = header else { return Ok(None) };
+                            let Some(time) = header.find_time(at) else { return Ok(None) };
+                            self.get_entity_inner(header, time, &mut decompressor).map(Some)
+                        })
+                        .collect::<VCRResult<Vec<OptionalEntity<T>>>>();
+
+                    tx.send(data)
+                });
+            }
+
+            let mut res = Vec::with_capacity(self.id_list.len());
+            for _ in 0..n_chunks {
+                let mut val = rx.recv().unwrap()?;
+                res.append(&mut val);
+            }
+
+            Ok(res)
+        })
+        .map_err(|_| VCRError::ParallelError)?
+    }
+
+    pub fn get_entities_parallel_by_id(
+        &self,
+        headers: &[[u8; 16]],
+        at: i64,
+        _enforce_start_time: bool,
+    ) -> VCRResult<Vec<OptionalEntity<T>>> {
+        crossbeam::scope(|s| {
+            let chunks = headers.chunks(headers.len() / num_cpus::get());
+            let n_chunks = chunks.len();
+            let (tx, rx) = channel::unbounded();
+
+            for chunk in chunks {
+                // unwraps inside scope will be caught, according to https://docs.rs/crossbeam/latest/crossbeam/fn.scope.html
+
+                let mut decompressor = self.decompressor().unwrap();
+
+                let tx = tx.clone();
+
+                s.spawn(move |_| {
+                    let data = chunk
+                        .iter()
+                        .map(|id| {
+                            let Some(header) = self.header_by_id(id) else { return Ok(None) };
+                            let Some(time) = header.find_time(at) else { return Ok(None) };
+                            self.get_entity_inner(header, time, &mut decompressor).map(Some)
+                        })
                         .collect::<VCRResult<Vec<OptionalEntity<T>>>>();
 
                     tx.send(data)
@@ -144,81 +199,90 @@ impl<T: Clone + Patch + DeserializeOwned + Send + Sync + serde::Serialize> Datab
         Ok(decompressed)
     }
 
+    #[inline(always)]
+    fn header_by_id(&self, id: &[u8; 16]) -> Option<&DataHeader> {
+        self.index.get(id)
+    }
+
+    // fn get_entity_by_index_inner(
+    //     &self,
+    //     index: u32,
+    //     at: i64,
+    //     decompressor: &mut Decompressor,
+    //     enforce_start_time: bool,
+    // ) -> VCRResult<OptionalEntity<T>> {
+    //     if let Some(header) = self.headers.get(index as usize) {
+    //         self.get_entity_inner(header, at, decompressor, enforce_start_time)
+    //     } else {
+    //         Ok(None)
+    //     }
+    // }
+
     fn get_entity_inner(
         &self,
-        id: &[u8; 16],
-        at: i64,
+        header: &DataHeader,
+        index: usize,
         decompressor: &mut Decompressor,
-    ) -> VCRResult<OptionalEntity<T>> {
-        if let Some(header) = self.index.get(id) {
-            let index = match header.times.binary_search(&at) {
-                Ok(i) => i,
-                Err(i) => {
-                    if i > 0 {
-                        i - 1
-                    } else {
-                        i
-                    }
-                }
-            };
+    ) -> VCRResult<ChroniclerEntity<T>> {
+        let entity_time = header.times[index];
 
-            let entity_time = header.times[index];
+        // if enforce_start_time && entity_time > at {
+        //     return Ok(None);
+        // }
 
-            if entity_time > at {
-                return Ok(None);
-            }
+        let decompressed = self.get_data_range(
+            header.offset as usize..(header.offset + header.compressed_len) as usize,
+            header.decompressed_len as usize,
+            decompressor,
+        )?;
 
-            let decompressed = self.get_data_range(
-                header.offset as usize..(header.offset + header.compressed_len) as usize,
-                header.decompressed_len as usize,
-                decompressor,
-            )?;
+        let checkpoint_index =
+            (index - (index % header.checkpoint_every)) / header.checkpoint_every;
 
-            let checkpoint_index =
-                (index - (index % header.checkpoint_every)) / header.checkpoint_every;
-
-            let slice = if let Some(start_pos) = header.checkpoint_positions.get(checkpoint_index) {
-                if let Some(next) = header.checkpoint_positions.get(start_pos + 1) {
-                    &decompressed[*start_pos..*next]
-                } else {
-                    &decompressed[*start_pos..]
-                }
+        let slice = if let Some(start_pos) = header.checkpoint_positions.get(checkpoint_index) {
+            if let Some(next) = header.checkpoint_positions.get(start_pos + 1) {
+                &decompressed[*start_pos..*next]
             } else {
-                &decompressed[..]
-            };
-
-            let mut deserializer = rmp_serde::Deserializer::from_read_ref(slice);
-            let mut cur = T::deserialize(&mut deserializer)?;
-
-            // if there's patches remaining, apply 'em
-            if index % header.checkpoint_every > 0 {
-                ApplyPatches::apply(
-                    &mut cur,
-                    (index % header.checkpoint_every) - 1,
-                    &mut deserializer,
-                )?;
+                &decompressed[*start_pos..]
             }
+        } else {
+            &decompressed[..]
+        };
 
-            return Ok(Some(ChroniclerEntity {
-                entity_id: *id,
-                valid_from: entity_time,
-                data: cur,
-            }));
+        let mut deserializer = rmp_serde::Deserializer::from_read_ref(slice);
+        let mut cur = T::deserialize(&mut deserializer)?;
+
+        // if there's patches remaining, apply 'em
+        if index % header.checkpoint_every > 0 {
+            ApplyPatches::apply(
+                &mut cur,
+                (index % header.checkpoint_every) - 1,
+                &mut deserializer,
+            )?;
         }
 
-        Ok(None)
+        return Ok(ChroniclerEntity {
+            entity_id: header.id,
+            valid_from: entity_time,
+            data: cur,
+        });
     }
 
     fn get_first_entity_inner(
         &self,
         id: &[u8; 16],
         decompressor: &mut Decompressor,
+        _enforce_start_time: bool,
     ) -> VCRResult<OptionalEntity<T>> {
-        if let Some(first_time) = self.index.get(id).and_then(|header| header.times.first()) {
-            self.get_entity_inner(id, *first_time, decompressor)
-        } else {
-            Ok(None)
-        }
+        let Some(header) = self.index.get(id) else {
+            return Ok(None);
+        };
+
+        if header.times.is_empty() {
+            return Ok(None);
+        };
+
+        self.get_entity_inner(header, 0, decompressor).map(Some)
     }
 
     // TODO: we need to add times here
@@ -411,11 +475,14 @@ impl<T: Clone + Patch + Diff + DeserializeOwned + Send + Sync + serde::Serialize
             store,
         } = TapeComponents::<Vec<CompressedDataHeader>>::split(path)?;
 
+        let headers: Vec<DataHeader> = header.into_iter().map(|v| v.decode()).collect();
+
         let index: HashMap<[u8; 16], DataHeader> =
-            header.into_iter().map(|v| (v.id, v.decode())).collect();
+            headers.clone().into_iter().map(|v| (v.id, v)).collect();
         let id_list = index.keys().copied().collect();
 
         Ok(Database {
+            headers,
             index,
             id_list,
             decoder: dict,
@@ -431,19 +498,51 @@ impl<T: Clone + Patch + Diff + DeserializeOwned + Send + Sync + serde::Serialize
 
     fn get_entity(&self, id: &[u8; 16], at: i64) -> VCRResult<OptionalEntity<T>> {
         let mut decompressor = self.decompressor()?;
-        self.get_entity_inner(id, at, &mut decompressor)
+        let Some(header) = self.header_by_id(id) else { return Ok(None) };
+        let Some(time) = header.find_time(at) else { return Ok(None) };
+        self.get_entity_inner(header, time, &mut decompressor).map(Some)
+    }
+
+
+    fn get_entity_by_location(
+            &self,
+            location: &crate::EntityLocation
+        ) -> VCRResult<OptionalEntity<Self::Record>> {
+            let mut decompressor = self.decompressor()?;
+
+            let Some(header) = self.headers.get(location.header_index as usize) else { return Ok(None) };
+            self.get_entity_inner(header, location.time_index as usize, &mut decompressor).map(Some)
+    }
+
+    fn get_entities_by_location(
+            &self,
+            locations: &[crate::EntityLocation],
+            _force_single_thread: bool,
+        ) -> VCRResult<Vec<OptionalEntity<Self::Record>>> {
+            // TODO: PARALLELIZE
+                let mut decompressor = self.decompressor()?;
+    
+                return locations
+                    .iter()
+                    .map(|location| {
+                        let Some(header) = self.headers.get(location.header_index as usize) else { return Ok(None) };
+                        self.get_entity_inner(header, location.time_index as usize, &mut decompressor).map(Some)
+                    })
+                    .collect::<VCRResult<Vec<OptionalEntity<T>>>>();
+    
+            // self.get_entities_parallel_by_id(ids, at)
     }
 
     fn get_first_entity(&self, id: &[u8; 16]) -> VCRResult<OptionalEntity<Self::Record>> {
         let mut decompressor = self.decompressor()?;
-        self.get_first_entity_inner(id, &mut decompressor)
+        self.get_first_entity_inner(id, &mut decompressor, true)
     }
 
     fn get_first_entities(&self, ids: &[[u8; 16]]) -> VCRResult<Vec<OptionalEntity<Self::Record>>> {
         let mut decompressor = self.decompressor()?;
         let mut result = Vec::with_capacity(ids.len());
         for id in ids {
-            result.push(self.get_first_entity_inner(id, &mut decompressor)?);
+            result.push(self.get_first_entity_inner(id, &mut decompressor, true)?);
         }
 
         Ok(result)
@@ -467,11 +566,15 @@ impl<T: Clone + Patch + Diff + DeserializeOwned + Send + Sync + serde::Serialize
 
             return ids
                 .iter()
-                .map(|id| self.get_entity_inner(id, at, &mut decompressor))
+                .map(|id| {
+                    let Some(header) = self.header_by_id(id) else { return Ok(None) };
+                    let Some(time) = header.find_time(at) else { return Ok(None) };
+                    self.get_entity_inner(header, time, &mut decompressor).map(Some)
+                })
                 .collect::<VCRResult<Vec<OptionalEntity<T>>>>();
         }
 
-        self.get_entities_parallel(ids, at)
+        self.get_entities_parallel_by_id(ids, at, true)
     }
 
     fn get_versions(
@@ -491,5 +594,46 @@ impl<T: Clone + Patch + Diff + DeserializeOwned + Send + Sync + serde::Serialize
 
     fn as_any(&self) -> &dyn std::any::Any {
         self
+    }
+
+    // fn get_entities_by_indices(
+    //     &self,
+    //     indices: &[u32],
+    //     at: i64,
+    //     enforce_start_time: bool,
+    //     force_single_thread: bool,
+    // ) -> VCRResult<Vec<OptionalEntity<Self::Record>>> {
+    //     let headers = indices
+    //         .into_iter()
+    //         .map(|idx| self.headers.get((*idx) as usize))
+    //         .collect::<Vec<Option<&DataHeader>>>();
+    //     if force_single_thread || headers.len() < num_cpus::get() {
+    //         let mut decompressor = self.decompressor()?;
+
+    //         return headers
+    //             .iter()
+    //             .map(|header| {
+    //                 header
+    //                     .and_then(|header| {
+    //                         self.get_entity_inner(header, at, &mut decompressor, enforce_start_time)
+    //                             .transpose()
+    //                     })
+    //                     .transpose()
+    //             })
+    //             .collect::<VCRResult<Vec<OptionalEntity<T>>>>();
+    //     }
+
+    //     self.get_entities_parallel_by_header(&headers[..], at, enforce_start_time)
+    // }
+
+    fn header_by_index(&self, index: u32) -> Option<&DataHeader> {
+        self.headers.get(index as usize)
+    }
+
+    fn index_from_id(&self, id: &[u8; 16]) -> Option<u32> {
+        self.headers
+            .iter()
+            .position(|header| header.id == *id)
+            .map(|v| v as u32)
     }
 }

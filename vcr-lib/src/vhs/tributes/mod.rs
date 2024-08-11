@@ -207,6 +207,29 @@ impl EntityDatabase for TributesDatabase {
         })
     }
 
+    fn header_by_index(&self, _index: u32) -> Option<&super::DataHeader> {
+        unimplemented!()
+    }
+
+    fn index_from_id(&self, _id: &[u8; 16]) -> Option<u32> {
+        unimplemented!()
+    }
+
+    fn get_entities_by_location(
+            &self,
+            _locations: &[crate::EntityLocation],
+            _force_single_thread: bool,
+        ) -> VCRResult<Vec<crate::OptionalEntity<Self::Record>>> {
+        todo!()
+    }
+
+    fn get_entity_by_location(
+            &self,
+            _location: &crate::EntityLocation
+        ) -> VCRResult<crate::OptionalEntity<Self::Record>> {
+        todo!()
+    }
+
     fn get_entity(
         &self,
         _: &[u8; 16],

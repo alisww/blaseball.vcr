@@ -1,8 +1,10 @@
 use serde::{Deserialize, Serialize};
 use vhs_diff::{Diff, Patch};
+use borsh::BorshSerialize;
 
-#[derive(Diff, Patch, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[derive(BorshSerialize, Diff, Patch, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
 pub struct Offseasonsetup {
     pub blessings: Option<Vec<Blessing>>,
     pub bonuses: Option<Vec<Bonus>>,
@@ -13,8 +15,9 @@ pub struct Offseasonsetup {
     pub wills_to_pass: Option<i64>,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[derive(BorshSerialize, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
 pub struct Blessing {
     pub description: String,
     pub id: String,
@@ -27,8 +30,9 @@ pub struct Blessing {
     pub value: Option<f64>,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[derive(BorshSerialize, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
 pub struct BlessingMetadata {
     pub amount: Option<Amount>,
     pub amount_max: Option<f64>,
@@ -99,8 +103,9 @@ pub struct BlessingMetadata {
     pub team_selection: Option<i64>,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[derive(BorshSerialize, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
 pub struct Bonus {
     #[serde(rename = "_id")]
     pub id: String,
@@ -117,8 +122,9 @@ pub struct Bonus {
     pub votes: Option<i64>,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[derive(BorshSerialize, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
 pub struct Decree {
     #[serde(rename = "_id")]
     pub id: Option<String>,
@@ -140,8 +146,9 @@ pub struct Decree {
     pub votes: Option<i64>,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[derive(BorshSerialize, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
 pub struct DecreeMetadata {
     pub event_description: String,
 
@@ -151,8 +158,9 @@ pub struct DecreeMetadata {
     pub mod_type: i64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[derive(BorshSerialize, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
 pub struct Gift {
     pub description: String,
 
@@ -168,8 +176,9 @@ pub struct Gift {
     pub value: i64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[derive(BorshSerialize, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
 pub struct GiftMetadata {
     pub amount_max: Option<i64>,
 
@@ -215,8 +224,9 @@ pub struct GiftMetadata {
     pub source_location: Option<Vec<i64>>,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[derive(BorshSerialize, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
 pub struct Will {
     pub description: String,
 
@@ -230,8 +240,9 @@ pub struct Will {
     pub title: String,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[derive(BorshSerialize, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
 pub struct Info {
     pub description: String,
 
@@ -241,8 +252,9 @@ pub struct Info {
     pub info_type: i64,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+#[derive(BorshSerialize, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
 pub struct Filters {
     pub equivalence: Option<f64>,
 
@@ -257,7 +269,8 @@ pub struct Filters {
     pub ratings: Option<i64>,
 }
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(BorshSerialize, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 #[serde(untagged)]
 pub enum Amount {
     Double(f64),

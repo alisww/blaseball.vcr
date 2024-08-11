@@ -1,6 +1,6 @@
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use serde::{Deserialize, Serialize};
-use serde_json::{value::RawValue, Value as JSONValue};
+use serde_json::Value as JSONValue;
 
 pub use blaseball_vcr::RawChroniclerEntity as ChroniclerEntity;
 
@@ -76,7 +76,7 @@ pub struct ChroniclerParameters {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub at: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "game")]
-    pub game_id: Option<String>
+    pub game_id: Option<String>,
 }
 
 pub async fn v2_paged_get(
@@ -164,25 +164,25 @@ pub async fn v1_get_game_updates(
     client: &reqwest::Client,
     url: &str,
     game_id: String,
-    mpb: &MultiProgress,
+    // mpb: &MultiProgress,
 ) -> anyhow::Result<Vec<ChronV1GameUpdate<JSONValue>>> {
     let mut results: Vec<ChronV1GameUpdate<JSONValue>> = Vec::with_capacity(32992);
 
     let mut page = 1;
-    let spinny = mpb.add(ProgressBar::new_spinner());
-    spinny.enable_steady_tick(std::time::Duration::from_millis(120));
-    spinny.set_style(
-        ProgressStyle::default_spinner()
-            .template("{spinner:.blue} {msg}")
-            .unwrap(),
-    );
+    // let spinny = mpb.add(ProgressBar::new_spinner());
+    // spinny.enable_steady_tick(std::time::Duration::from_millis(120));
+    // spinny.set_style(
+    //     ProgressStyle::default_spinner()
+    //         .template("{spinner:.blue} {msg}")
+    //         .unwrap(),
+    // );
 
     let mut parameters = ChroniclerParameters::default();
     parameters.game_id = Some(game_id);
     parameters.count = 1000;
 
     loop {
-        spinny.set_message(format!("downloading entities - page {}", page));
+        // spinny.set_message(format!("downloading entities - page {}", page));
         let mut chron_response: ChroniclerV1Response<ChronV1GameUpdate<JSONValue>> = client
             .get(url)
             .query(&parameters)
@@ -199,7 +199,7 @@ pub async fn v1_get_game_updates(
             break;
         }
     }
-    mpb.remove(&spinny);
+    // mpb.remove(&spinny);
 
     Ok(results)
 }

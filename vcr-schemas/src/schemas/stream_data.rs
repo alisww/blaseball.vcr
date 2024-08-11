@@ -1,7 +1,9 @@
 use serde::Serialize;
 use super::*;
+use borsh::BorshSerialize;
 
-#[derive(Serialize, Clone)]
+#[derive(BorshSerialize, Serialize, Clone)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct PlayoffData {
     pub round: Option<Playoffround>,
@@ -13,14 +15,16 @@ pub struct PlayoffData {
     pub tomorrow_matchups: Vec<Playoffmatchup>,
 }
 
-#[derive(Serialize, Clone)]
+#[derive(BorshSerialize, Serialize, Clone)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 #[repr(transparent)]
 pub struct StreamDataWrapper {
     pub value: StreamData
 }
 
-#[derive(Serialize, Clone)]
+#[derive(BorshSerialize, Serialize, Clone)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct StreamData {
     pub games: GameData,
@@ -29,7 +33,8 @@ pub struct StreamData {
     pub temporal: Option<Temporal>
 }
 
-#[derive(Serialize, Clone)]
+#[derive(BorshSerialize, Serialize, Clone)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct GameData {
     pub sim: Sim,
@@ -44,7 +49,8 @@ pub struct GameData {
     pub postseasons: Option<Vec<PlayoffData>>
 }
 
-#[derive(Serialize, Clone)]
+#[derive(BorshSerialize, Serialize, Clone)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct LeagueData {
     pub teams: Vec<Team>,
@@ -56,14 +62,16 @@ pub struct LeagueData {
     pub stats: StatData
 }
 
-#[derive(Serialize, Clone)]
+#[derive(BorshSerialize, Serialize, Clone)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct StatData {
     pub sunsun: Option<Sunsun>,
     pub community_chest: Option<CommunityChestProgress>
 }
 
-#[derive(Serialize, Clone)]
+#[derive(BorshSerialize, Serialize, Clone)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct FightData {
     pub boss_fights: Vec<Bossfight>

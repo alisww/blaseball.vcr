@@ -95,7 +95,9 @@ impl FeedIndexCollection {
         game: impl Into<UuidShell>,
         time: impl RangeBounds<i64>,
     ) -> Option<btree_map::Range<'_, i64, EventIdChunk>> {
-        let UuidShell::Tagged(UuidTag::Game(id)) = game.into() else { return None };
+        let UuidShell::Tagged(UuidTag::Game(id)) = game.into() else {
+            return None;
+        };
 
         self.games.get(id as usize, time)
     }
@@ -105,7 +107,9 @@ impl FeedIndexCollection {
         team: impl Into<UuidShell>,
         time: impl RangeBounds<i64>,
     ) -> Option<btree_map::Range<'_, i64, EventIdChunk>> {
-        let UuidShell::Tagged(UuidTag::Team(id)) = team.into() else { return None };
+        let UuidShell::Tagged(UuidTag::Team(id)) = team.into() else {
+            return None;
+        };
 
         self.teams.get(id as usize, time)
     }
@@ -115,7 +119,9 @@ impl FeedIndexCollection {
         player: impl Into<UuidShell>,
         time: impl RangeBounds<i64>,
     ) -> Option<btree_map::Range<'_, i64, EventIdChunk>> {
-        let UuidShell::Tagged(UuidTag::Player(id)) = player.into() else { return None };
+        let UuidShell::Tagged(UuidTag::Player(id)) = player.into() else {
+            return None;
+        };
         self.players.get(id as usize, time)
     }
 }

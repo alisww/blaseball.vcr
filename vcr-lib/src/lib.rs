@@ -4,6 +4,8 @@ pub mod site;
 pub mod utils;
 use std::path::Path;
 
+use bitcode::{Decode, Encode};
+use serde::{Deserialize, Serialize};
 pub use utils::*;
 pub mod feed;
 pub use err::*;
@@ -12,6 +14,7 @@ pub mod vhs;
 
 mod chron_types;
 pub use chron_types::*;
+use vhs::DataHeader;
 
 pub mod stream_data;
 
@@ -23,12 +26,73 @@ pub mod stream_data;
 pub type VCRResult<T> = Result<T, VCRError>;
 pub type OptionalEntity<T> = Option<ChroniclerEntity<T>>;
 
+#[derive(Debug, PartialEq, PartialOrd, Eq, Clone, Copy, Serialize, Deserialize, Encode, Decode)]
+pub struct EntityLocation {
+    pub header_index: u32,
+    pub time_index: u32
+}
+
+impl redb::Value for EntityLocation {
+    type SelfType<'a>
+     = EntityLocation where Self: 'a;
+
+    type AsBytes<'a>
+     = [u8; 8] where Self: 'a;
+
+    fn fixed_width() -> Option<usize> {
+        Some(8)
+    }
+
+    fn from_bytes<'a>(data: &'a [u8]) -> Self::SelfType<'a>
+    where
+        Self: 'a,
+    {
+        EntityLocation {
+            header_index: u32::from_le_bytes(data[0..4].try_into().unwrap()),
+            time_index: u32::from_le_bytes(data[4..].try_into().unwrap()),
+
+        }
+    }
+
+    fn as_bytes<'a, 'b: 'a>(value: &'a Self::SelfType<'b>) -> Self::AsBytes<'a>
+    where
+        Self: 'a,
+        Self: 'b,
+    {
+        let mut out = [0u8; 8];
+        out[0..4].copy_from_slice(&value.header_index.to_le_bytes());
+        out[4..].copy_from_slice(&value.time_index.to_le_bytes());
+
+        out
+    }
+
+    fn type_name() -> redb::TypeName {
+        redb::TypeName::new("blaseball-vcr-entity-location")
+    }
+}
+
+
 pub trait EntityDatabase {
     type Record;
 
     fn from_single(path: impl AsRef<Path>) -> VCRResult<Self>
     where
         Self: Sized;
+
+    fn header_by_index(&self, index: u32) -> Option<&DataHeader>;
+
+    fn index_from_id(&self, id: &[u8; 16]) -> Option<u32>;
+
+    fn get_entity_by_location(
+        &self,
+        location: &EntityLocation
+    ) -> VCRResult<OptionalEntity<Self::Record>>;
+
+    fn get_entities_by_location(
+        &self,
+        locations: &[EntityLocation],
+        force_single_thread: bool,
+    ) -> VCRResult<Vec<OptionalEntity<Self::Record>>>;
 
     fn get_entity(&self, id: &[u8; 16], at: i64) -> VCRResult<OptionalEntity<Self::Record>>;
 

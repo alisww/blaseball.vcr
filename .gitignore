@@ -31,3 +31,5 @@ all_games.zstd
 data/
 games.json
 vcr_games.zstd
+games.vcr.zst
+games.json.zst

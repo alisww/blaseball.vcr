@@ -3,6 +3,7 @@ use blaseball_vcr::{timestamp_to_nanos, VCRResult};
 use new_encoder::*;
 use uuid::Uuid;
 use vcr_schemas::game::GameUpdate;
+use vcr_schemas::DynamicEntityType;
 
 use std::fs::File;
 use std::io::{self, BufReader, Read};
@@ -15,6 +16,7 @@ fn main() -> VCRResult<()> {
         (version: "1.0")
         (author: "emily signet <emily@sibr.dev>")
         (about: "blaseball.vcr gen 2 games encoder")
+        (@arg ENTITY_LOCATION_TABLE: +required -t --table [LOCATION_DB] "database file for entity locations by entity hash")
         (@arg INPUT: +required -i --input [INPUT] "input games file")
         (@arg OUTPUT: +required -o --output [FILE] "output file for tape")
         (@arg ZSTD_DICT: +required -d --dict [DICT] "set dict for tape")
@@ -27,7 +29,12 @@ fn main() -> VCRResult<()> {
 
     let games_dict = std::fs::read(matches.value_of("ZSTD_DICT").unwrap())?;
 
+    let mut hash_db = redb::Database::create(matches.value_of("ENTITY_LOCATION_TABLE").unwrap())?;
+    let write_txn = hash_db.begin_write()?;
+    let mut hash_table = write_txn.open_table(HASH_TO_ENTITY_TABLE)?;
+
     let mut recorder: TapeRecorder<GameUpdate, File> = TapeRecorder::new(
+        DynamicEntityType::GameUpdate,
         tempfile::tempfile()?,
         Some(games_dict.clone()),
         matches
@@ -75,7 +82,7 @@ fn main() -> VCRResult<()> {
 
         let entity = TapeEntity { times, data, id };
 
-        recorder.add_entity(entity)?;
+        recorder.add_entity(entity, &mut hash_table)?;
 
         i += 1;
 
@@ -84,6 +91,10 @@ fn main() -> VCRResult<()> {
 
     let (header, mut main) = recorder.finish()?;
     let out = std::fs::File::create(matches.value_of("OUTPUT").unwrap())?;
+
+    drop(hash_table);
+    write_txn.commit()?;
+    hash_db.compact()?;
 
     use std::io::Seek;
     main.rewind()?;

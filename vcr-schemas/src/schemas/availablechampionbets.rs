@@ -1,7 +1,9 @@
 use vcr_lookups::UuidShell;
 use serde::{Serialize, Deserialize};
+use borsh::BorshSerialize;
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff, Debug)]
+#[serde(deny_unknown_fields)]
 #[serde(transparent)]
 #[repr(transparent)]
 pub struct Availablechampionbets {
@@ -10,7 +12,8 @@ pub struct Availablechampionbets {
 
 // pub type Availablechampionbets = Vec<Availablechampionbet>;
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff, Debug)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct Availablechampionbet {
     pub division_order: Option<i64>,
@@ -42,7 +45,7 @@ pub struct Availablechampionbet {
     pub team_pitching_rating: Option<f64>,
 
     pub team_running_rating: Option<f64>,
-
+    #[borsh(serialize_with = "crate::serde_json_borsh::serialize_json_value_opt")]
     pub team_won: Option<serde_json::Value>,
 
     pub wins: Option<String>,

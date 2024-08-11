@@ -1,14 +1,17 @@
 
 use serde::{Serialize, Deserialize};
+use borsh::BorshSerialize;
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff, Debug)]
+#[serde(deny_unknown_fields)]
 #[serde(transparent)]
 #[repr(transparent)]
 pub struct Nullified {
     inner: NullifiedInner
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 #[serde(untagged)]
 pub enum NullifiedInner {
     NullifiedClass(NullifiedClass),
@@ -16,7 +19,8 @@ pub enum NullifiedInner {
     StringArray(Vec<String>),
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct NullifiedClass {
     pub history: Option<Vec<History>>,
 
@@ -25,7 +29,8 @@ pub struct NullifiedClass {
     pub size: Option<f64>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct History {
     pub day: i64,
 

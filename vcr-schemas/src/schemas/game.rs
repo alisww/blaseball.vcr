@@ -1,7 +1,9 @@
 use serde::{Serialize, Deserialize};
 use vcr_lookups::UuidShell;
+use borsh::BorshSerialize;
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, vhs_diff::Diff, vhs_diff::Patch)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, vhs_diff::Diff, vhs_diff::Patch, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct GameUpdate {
     #[serde(rename = "_id")]
     pub id: Option<UuidShell>,
@@ -67,6 +69,7 @@ pub struct GameUpdate {
     pub away_team_nickname: String,
 
     #[serde(rename = "awayTeamRuns")]
+    #[borsh(serialize_with = "crate::serde_json_borsh::serialize_json_value_opt")]
     pub away_team_runs: Option<serde_json::Value>,
 
     #[serde(rename = "awayTeamSecondaryColor")]
@@ -169,6 +172,7 @@ pub struct GameUpdate {
     pub home_team_nickname: String,
 
     #[serde(rename = "homeTeamRuns")]
+    #[borsh(serialize_with = "crate::serde_json_borsh::serialize_json_value_opt")]
     pub home_team_runs: Option<serde_json::Value>,
 
     #[serde(rename = "homeTeamSecondaryColor")]
@@ -283,7 +287,8 @@ pub struct GameUpdate {
     pub winner: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct LastUpdateFull {
     #[serde(rename = "blurb")]
     pub blurb: String,
@@ -301,7 +306,9 @@ pub struct LastUpdateFull {
     pub description: String,
 
     #[serde(rename = "gameTags")]
-    pub game_tags: Vec<Option<serde_json::Value>>,
+    #[borsh(serialize_with = "crate::serde_json_borsh::serialize_json_value_vec")]
+
+    pub game_tags: Vec<serde_json::Value>,
 
     #[serde(rename = "id")]
     pub id: String,
@@ -331,7 +338,8 @@ pub struct LastUpdateFull {
     pub last_update_full_type: i64,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Metadata {
     #[serde(rename = "after")]
     pub after: Option<f64>,
@@ -406,7 +414,8 @@ pub struct Metadata {
     pub ledger: Option<String>,
 
     #[serde(rename = "lines")]
-    pub lines: Option<Vec<Option<serde_json::Value>>>,
+    #[borsh(serialize_with = "crate::serde_json_borsh::serialize_json_value_vecopt")]
+    pub lines: Option<Vec<serde_json::Value>>,
 
     #[serde(rename = "location")]
     pub location: Option<i64>,
@@ -442,7 +451,8 @@ pub struct Metadata {
     pub winner: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct QueuedEvent {
     #[serde(rename = "delay")]
     pub delay: i64,
@@ -454,13 +464,15 @@ pub struct QueuedEvent {
     pub log_updates: Vec<String>,
 
     #[serde(rename = "outcomes")]
-    pub outcomes: Vec<Option<serde_json::Value>>,
+    #[borsh(serialize_with = "crate::serde_json_borsh::serialize_json_value_vec")]
+    pub outcomes: Vec<serde_json::Value>,
 
     #[serde(rename = "type")]
     pub queued_event_type: i64,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct State {
     #[serde(rename = "ego_player_data")]
     pub ego_player_data: Option<Vec<EgoPlayerDatum>>,
@@ -484,7 +496,8 @@ pub struct State {
     pub snowfall_events: Option<i64>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct EgoPlayerDatum {
     #[serde(rename = "hallPlayer")]
     pub hall_player: bool,
@@ -499,7 +512,8 @@ pub struct EgoPlayerDatum {
     pub team: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Postseason {
     #[serde(rename = "bracket")]
     pub bracket: i64,
@@ -511,7 +525,8 @@ pub struct Postseason {
     pub playoff_id: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct PrizeMatch {
     #[serde(rename = "itemId")]
     pub item_id: String,
@@ -523,7 +538,8 @@ pub struct PrizeMatch {
     pub winner: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Reload {
     #[serde(rename = "BaserunnerCount")]
     pub baserunner_count: i64,

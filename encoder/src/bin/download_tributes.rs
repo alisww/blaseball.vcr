@@ -25,7 +25,7 @@ async fn run(matches: ArgMatches<'_>) -> VCRResult<()> {
 
     let bars = MultiProgress::new();
     bars.set_alignment(MultiProgressAlignment::Top);
-    let entity_ids = vec![Uuid::nil().to_string()];
+    let entity_ids = [Uuid::nil().to_string()];
 
     println!("| found {} entities", entity_ids.len());
 
@@ -38,7 +38,7 @@ async fn run(matches: ArgMatches<'_>) -> VCRResult<()> {
     entity_id_bar.set_message("encoding entities");
 
     entity_id_bar.tick();
-    entity_id_bar.set_message(format!("encoding {}", Uuid::nil().to_string()));
+    entity_id_bar.set_message(format!("encoding {}", Uuid::nil()));
 
     let versions: Vec<RawChroniclerEntity<JsonTributes>> = v2_paged_get(
         &client,
@@ -52,7 +52,7 @@ async fn run(matches: ArgMatches<'_>) -> VCRResult<()> {
             count: 1000,
             at: None,
             before: None,
-            game_id: None
+            game_id: None,
         },
     )
     .await?

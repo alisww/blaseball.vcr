@@ -1,13 +1,21 @@
+use redb::TableDefinition;
 use serde::Serialize;
+use vcr_schemas::DynamicEntityType;
+use xxhash_rust::xxh3::xxh3_128;
 
 use super::DataHeader;
-use crate::{timestamp_to_nanos, RawChroniclerEntity, VCRResult};
+use crate::{timestamp_to_nanos, EntityLocation, RawChroniclerEntity, VCRResult};
+use borsh::BorshSerialize;
 use std::io::{self, Read, Write};
 use std::marker::PhantomData;
+use uuid::Uuid;
 use vhs_diff::*;
 use zstd::bulk::Compressor;
 
-use uuid::Uuid;
+pub const HASH_TO_ENTITY_TABLE: TableDefinition<u128, EntityLocation> =
+    TableDefinition::new("entity-locations");
+pub type HeaderIndex = u32;
+
 
 pub struct TapeEntity<T> {
     pub id: [u8; 16],
@@ -28,17 +36,36 @@ impl<T> From<Vec<RawChroniclerEntity<T>>> for TapeEntity<T> {
     }
 }
 
+impl<T: BorshSerialize> TapeEntity<T> {
+    pub fn hashes(&self) -> Vec<u128> {
+        let mut hashes = Vec::with_capacity(self.data.len());
+
+        let mut serialize_buffer = Vec::new();
+        for entity in &self.data {
+            entity.serialize(&mut serialize_buffer).unwrap();
+            hashes.push(xxh3_128(&serialize_buffer));
+            serialize_buffer.clear();
+        }
+
+        hashes
+    }
+}
+
 pub struct TapeRecorder<T: Serialize + Clone + Patch + Diff + Send + Sync, M: Write> {
     patch_out: M,
     compressor: Compressor<'static>,
     offset: u32,
     headers: Vec<DataHeader>,
     checkpoint_every: usize,
+    _etype: DynamicEntityType,
     _record_type: PhantomData<T>,
 }
 
-impl<T: Serialize + Clone + Patch + Diff + Send + Sync, M: Write> TapeRecorder<T, M> {
+impl<T: BorshSerialize + Serialize + Clone + Patch + Diff + Send + Sync, M: Write>
+    TapeRecorder<T, M>
+{
     pub fn new(
+        etype: DynamicEntityType,
         patch_out: M,
         dict: Option<Vec<u8>>,
         compression_level: i32,
@@ -54,6 +81,7 @@ impl<T: Serialize + Clone + Patch + Diff + Send + Sync, M: Write> TapeRecorder<T
         compressor.include_magicbytes(false)?;
 
         Ok(TapeRecorder {
+            _etype: etype,
             patch_out,
             compressor,
             offset: 0,
@@ -63,7 +91,26 @@ impl<T: Serialize + Clone + Patch + Diff + Send + Sync, M: Write> TapeRecorder<T
         })
     }
 
-    pub fn add_entity(&mut self, entity: TapeEntity<T>) -> VCRResult<()> {
+    pub fn add_entity(
+        &mut self,
+        entity: TapeEntity<T>,
+        hash_table: &mut redb::Table<'_, u128, EntityLocation>,
+    ) -> VCRResult<()> {
+        let hashes = entity.hashes();
+        let header_index = self.headers.len() as u32;
+
+        // let location = EntityLocation {
+        //     entity_type: self.etype,
+        //     header_index,
+        // };
+
+        for (idx, hash) in hashes.into_iter().enumerate() {
+            hash_table.insert(hash, EntityLocation {
+                header_index: header_index,
+                time_index: idx.try_into().unwrap()
+            })?;
+        }
+
         let (bytes, checkpoint_positions) = encode_entity(entity.data, self.checkpoint_every)?;
 
         let compressed_patches = self.compressor.compress(&bytes[..])?;

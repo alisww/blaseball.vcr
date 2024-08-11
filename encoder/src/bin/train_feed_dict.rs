@@ -49,7 +49,7 @@ fn main() -> VCRResult<()> {
                 println!("reason: tournament")
             }
 
-            trainer.add_chunk(chunk.drain(..).collect());
+            trainer.add_chunk(std::mem::take(&mut chunk));
             i += 1;
         }
 

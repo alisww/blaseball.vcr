@@ -1,8 +1,10 @@
 use vcr_lookups::UuidShell;
 use serde::{Serialize, Deserialize};
 use uuid::Uuid;
+use borsh::BorshSerialize;
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff)]
+#[derive(BorshSerialize, Serialize, Deserialize, Clone, PartialEq, vhs_diff::Patch, vhs_diff::Diff, Debug)]
+#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct Tournament {
     pub description: String,
