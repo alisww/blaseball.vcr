@@ -1,6 +1,6 @@
+use crate::etypes::DynamicEntityType;
 use redb::TableDefinition;
 use serde::Serialize;
-use vcr_schemas::DynamicEntityType;
 use xxhash_rust::xxh3::xxh3_128;
 
 use super::DataHeader;
@@ -15,7 +15,6 @@ use zstd::bulk::Compressor;
 pub const HASH_TO_ENTITY_TABLE: TableDefinition<u128, EntityLocation> =
     TableDefinition::new("entity-locations");
 pub type HeaderIndex = u32;
-
 
 pub struct TapeEntity<T> {
     pub id: [u8; 16],
@@ -105,10 +104,13 @@ impl<T: BorshSerialize + Serialize + Clone + Patch + Diff + Send + Sync, M: Writ
         // };
 
         for (idx, hash) in hashes.into_iter().enumerate() {
-            hash_table.insert(hash, EntityLocation {
-                header_index: header_index,
-                time_index: idx.try_into().unwrap()
-            })?;
+            hash_table.insert(
+                hash,
+                EntityLocation {
+                    header_index: header_index,
+                    time_index: idx.try_into().unwrap(),
+                },
+            )?;
         }
 
         let (bytes, checkpoint_positions) = encode_entity(entity.data, self.checkpoint_every)?;

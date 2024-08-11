@@ -1,3 +1,4 @@
+#![feature(get_mut_unchecked)]
 // mod paging;
 // use blaseball_vcr::db_manager::*;
 // use blaseball_vcr::*;
@@ -32,6 +33,8 @@ extern crate rocket;
 
 use blaseball_vcr::feed::db::FeedDatabase;
 use blaseball_vcr::site::AssetManager;
+use blaseball_vcr::stream_data::db::StreamDatabase;
+use blaseball_vcr::stream_data::thisidisstaticyo;
 use blaseball_vcr::vhs::tributes::TributesDatabase;
 use serde::Serialize;
 
@@ -53,7 +56,9 @@ use rocket::figment::{
     value::magic::RelativePathBuf,
     Figment, Profile,
 };
+use std::fs::File;
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::time::Duration;
 use vcr_schemas::*;
 
@@ -121,6 +126,7 @@ async fn main() -> Result<(), rocket::Error> {
 
     #[derive(serde::Deserialize, Debug)]
     struct VCRConfig {
+        stream_tape: Option<RelativePathBuf>,
         tapes_folder: Option<RelativePathBuf>,
         feed_tape: Option<RelativePathBuf>,
         feed_indexes: Option<RelativePathBuf>,
@@ -182,6 +188,26 @@ async fn main() -> Result<(), rocket::Error> {
         }
     }
 
+    if let Some(tributes) = config.tributes_tape {
+        let db = TributesDatabase::from_single(tributes.relative()).unwrap();
+        db_manager.insert(db);
+    }
+
+    let mut db_manager = Arc::new(db_manager);
+
+    if let Some(stream_file) = config.stream_tape {
+        let file = File::open(stream_file.relative()).unwrap();
+        let stream: StreamDatabase<
+            thisidisstaticyo::StreamData,
+            thisidisstaticyo::PackedStreamData,
+        > = StreamDatabase::initialize(file, Arc::clone(&db_manager)).unwrap();
+        // girls love unsafely mutating a shared value
+        unsafe {
+            Arc::<blaseball_vcr::db_manager::DatabaseManager>::get_mut_unchecked(&mut db_manager)
+                .insert(stream)
+        };
+    }
+
     if let Some(site_path) = config.site_tape {
         let site_manager = AssetManager::from_single(site_path.relative()).unwrap();
         if config.check_site_tapes {
@@ -210,11 +236,6 @@ async fn main() -> Result<(), rocket::Error> {
         rocket = rocket
             .manage(feed_db)
             .mount("/vcr", routes![feed::api::feed]);
-    }
-
-    if let Some(tributes) = config.tributes_tape {
-        let db = TributesDatabase::from_single(tributes.relative()).unwrap();
-        db_manager.insert(db);
     }
 
     if config.time_requests {

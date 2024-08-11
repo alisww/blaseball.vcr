@@ -6,6 +6,7 @@ use rocket::State;
 
 use blaseball_vcr::db_manager::DatabaseManager;
 
+use blaseball_vcr::stream_data::thisidisstaticyo;
 use blaseball_vcr::*;
 
 use vcr_schemas::*;
@@ -13,7 +14,7 @@ use vcr_schemas::*;
 #[get("/v2/entities?<req..>")]
 pub fn entities(
     req: EntitiesRequest<'_>,
-    db_manager: &State<DatabaseManager>,
+    db_manager: &State<Arc<DatabaseManager>>,
     page_manager: &State<PageManager>,
 ) -> VCRResult<RocketJSON<DynChronResponse>> {
     let ety = req.ty.to_lowercase();
@@ -80,7 +81,7 @@ pub fn entities(
 #[get("/v2/versions?<req..>")]
 pub fn versions(
     req: VersionsRequest<'_>,
-    db_manager: &State<DatabaseManager>,
+    db_manager: &State<Arc<DatabaseManager>>,
     page_manager: &State<PageManager>,
 ) -> VCRResult<RocketJSON<DynChronResponse>> {
     let ety = req.ty.to_lowercase();
@@ -112,38 +113,38 @@ pub fn versions(
     } else {
         let step = 3;
 
-        if ety == "stream" {
-            let start_time = req.after_nanos().unwrap_or_else(|| {
-                req.before_nanos().unwrap_or(i64::MAX) - ((req.count.unwrap_or(1) as i64) * step)
-            });
-            // req.before_nanos() - ((req.count.unwrap_or(1) as i64) * step),
+        // if ety == "stream" {
+        //     let start_time = req.after_nanos().unwrap_or_else(|| {
+        //         req.before_nanos().unwrap_or(i64::MAX) - ((req.count.unwrap_or(1) as i64) * step)
+        //     });
+        //     // req.before_nanos() - ((req.count.unwrap_or(1) as i64) * step),
 
-            let end_time = req.before_nanos().unwrap_or_else(|| {
-                req.after_nanos().unwrap_or(0) + ((req.count.unwrap_or(1) as i64) * step)
-            });
+        //     let end_time = req.before_nanos().unwrap_or_else(|| {
+        //         req.after_nanos().unwrap_or(0) + ((req.count.unwrap_or(1) as i64) * step)
+        //     });
 
-            let mut stream_samples = (start_time..end_time)
-                .step_by(step as usize)
-                .map(|at| {
-                    Ok((ChroniclerEntity {
-                        entity_id: *uuid::Uuid::nil().as_bytes(),
-                        valid_from: at,
-                        data: blaseball_vcr::stream_data::stream_data(db_manager, at)?,
-                    })
-                    .erase())
-                })
-                .collect::<VCRResult<Vec<DynamicChronEntity>>>()?;
+        //     let mut stream_samples = (start_time..end_time)
+        //         .step_by(step as usize)
+        //         .map(|at| {
+        //             Ok((ChroniclerEntity {
+        //                 entity_id: *uuid::Uuid::nil().as_bytes(),
+        //                 valid_from: at,
+        //                 data: blaseball_vcr::stream_data::stream_data(db_manager, at)?,
+        //             })
+        //             .erase())
+        //         })
+        //         .collect::<VCRResult<Vec<DynamicChronEntity>>>()?;
 
-            stream_samples.sort_by_key(|x| x.valid_from);
-            if let Some(Order::Desc) = req.order {
-                stream_samples.reverse();
-            }
+        //     stream_samples.sort_by_key(|x| x.valid_from);
+        //     if let Some(Order::Desc) = req.order {
+        //         stream_samples.reverse();
+        //     }
 
-            return Ok(RocketJSON(ChronResponse {
-                next_page: None,
-                data: stream_samples,
-            }));
-        }
+        //     return Ok(RocketJSON(ChronResponse {
+        //         next_page: None,
+        //         data: stream_samples,
+        //     }));
+        // }
 
         let before = req.before_nanos().unwrap_or(i64::MAX);
         let after = req.after_nanos().unwrap_or(i64::MAX);

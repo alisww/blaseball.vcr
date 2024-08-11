@@ -44,6 +44,8 @@ pub enum VCRError {
     #[error(transparent)]
     REDBCommitError(#[from] redb::CommitError),
     #[error(transparent)]
+    BitcodeError(#[from] bitcode::Error),
+    #[error(transparent)]
     Other(#[from] anyhow::Error),
     #[error("error occurred inside parallel processing block")]
     ParallelError,

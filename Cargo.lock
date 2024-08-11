@@ -121,9 +121,9 @@ checksum = "b3d1d046238990b9cf5bcde22a3fb3584ee5cf65fb2765f454ed428c7a0063da"
 
 [[package]]
 name = "arrayref"
-version = "0.3.7"
+version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6b4930d2cb77ce62f89ee5d5289b4ac049559b1c45539271f5ed4fdc7db34545"
+checksum = "9d151e35f61089500b617991b791fc8bfd237ae50cd5950803758a179b41e67a"
 
 [[package]]
 name = "arrayvec"
@@ -433,6 +433,7 @@ name = "blaseball_vcr"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "arrayref",
  "arrayvec",
  "bitcode",
  "bitvec",
@@ -459,6 +460,7 @@ dependencies = [
  "serde",
  "serde_json",
  "smallvec",
+ "strum",
  "thiserror",
  "tsz-compress",
  "type-map",
@@ -1950,6 +1952,7 @@ name = "new-encoder"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "arrayref",
  "assert-json-diff",
  "bitcode",
  "blake2s_simd",

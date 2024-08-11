@@ -3,15 +3,12 @@
 use std::{
     fs::File,
     io::{BufRead, BufReader},
-    path::PathBuf,
     str::FromStr,
-    sync::mpsc::sync_channel,
 };
 
 use blaseball_vcr::stream_data::thisidisstaticyo;
 use blaseball_vcr::VCRResult;
 use clap::clap_app;
-use genson_rs::SchemaBuilder;
 use serde::Deserialize;
 use simd_json::prelude::*;
 

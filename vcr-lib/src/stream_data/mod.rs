@@ -1,10 +1,18 @@
+use bitcode::{Decode, Encode};
+
 use crate::{db_manager::DatabaseManager, EntityLocation, VCRResult};
 
+pub mod db;
 pub mod thisidisstaticyo;
-
 // pub struct EntityIndexAndTime {
 
 // }
+
+#[derive(Encode, Decode)]
+pub struct StreamDataBatch<I> {
+    pub times: Vec<i64>,
+    pub items: Vec<I>,
+}
 
 pub trait StreamComponent {
     type Packed: PackedStreamComponent;
@@ -17,7 +25,7 @@ pub trait StreamComponent {
     ) -> VCRResult<Self::Packed>;
 }
 
-pub trait PackedStreamComponent {
+pub trait PackedStreamComponent: for<'de> bitcode::Decode<'de> + bitcode::Encode {
     type Unpacked: StreamComponent;
 
     fn unpack(&self, time: i64, database: &DatabaseManager) -> VCRResult<Self::Unpacked>;
@@ -62,13 +70,19 @@ macro_rules! pack_entities {
                 } else {
                     let id = $extractor(item);
                     let Some(idx) = db.index_from_id(id.as_bytes()) else {
-                        println!("failed to find id {id} for {}", std::any::type_name::<$etype>());
+                        println!(
+                            "failed to find id {id} for {}",
+                            std::any::type_name::<$etype>()
+                        );
                         continue;
                     };
-    
+
                     let header = db.header_by_index(idx).unwrap();
                     let time = header.find_time_unchecked($time);
-                    EntityLocation { header_index: idx as u32, time_index: time as u32 }
+                    EntityLocation {
+                        header_index: idx as u32,
+                        time_index: time as u32,
+                    }
                 };
 
                 locations.push(location);
@@ -89,13 +103,19 @@ macro_rules! pack_entities {
             for item in items {
                 let id = $extractor(item);
                 let Some(idx) = db.index_from_id(id.as_bytes()) else {
-                    println!("failed to find id {id} for {}", std::any::type_name::<$etype>());
+                    println!(
+                        "failed to find id {id} for {}",
+                        std::any::type_name::<$etype>()
+                    );
                     continue;
                 };
 
                 let header = db.header_by_index(idx).unwrap();
                 let time = header.find_time_unchecked($time);
-                positions.push(EntityLocation { header_index: idx as u32, time_index: time as u32 });
+                positions.push(EntityLocation {
+                    header_index: idx as u32,
+                    time_index: time as u32,
+                });
             }
 
             Some(positions)
@@ -119,10 +139,13 @@ macro_rules! pack_entities {
                 if let Some(idx) = db.index_from_id(id.as_bytes()) {
                     let header = db.header_by_index(idx).unwrap();
                     let time = header.find_time_unchecked($time);
-        
+
                     // let db = $db.get_db::<$etype>().unwrap();
                     // let id = $extractor(item);
-                    Some(EntityLocation { header_index: idx, time_index: time as u32 })
+                    Some(EntityLocation {
+                        header_index: idx,
+                        time_index: time as u32,
+                    })
                 } else {
                     None
                 }
@@ -155,10 +178,13 @@ macro_rules! pack_entities {
             if let Some(idx) = db.index_from_id(id.as_bytes()) {
                 let header = db.header_by_index(idx).unwrap();
                 let time = header.find_time_unchecked($time);
-    
+
                 // let db = $db.get_db::<$etype>().unwrap();
                 // let id = $extractor(item);
-                Some(EntityLocation { header_index: idx, time_index: time as u32 })
+                Some(EntityLocation {
+                    header_index: idx,
+                    time_index: time as u32,
+                })
             } else {
                 None
             }

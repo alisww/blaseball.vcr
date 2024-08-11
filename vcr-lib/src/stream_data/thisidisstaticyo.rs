@@ -12,17 +12,17 @@ use vcr_schemas::{
 use xxhash_rust::xxh3::xxh3_128;
 
 use crate::{
-    db_manager::DatabaseManager, pack_entities, unpack_entities, EntityLocation, VCRResult
+    db_manager::DatabaseManager, pack_entities, unpack_entities, EntityLocation, VCRResult,
 };
 
 use super::{PackedStreamComponent, StreamComponent};
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct StreamDataWrapper {
     pub value: Option<StreamData>,
 }
 
-#[derive(Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Deserialize, Serialize, PartialEq, Debug, Clone)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct StreamData {
     #[serde(default)]
@@ -102,7 +102,7 @@ impl PackedStreamComponent for PackedStreamData {
     }
 }
 
-#[derive(Deserialize, Serialize, Derivative, Debug)]
+#[derive(Deserialize, Serialize, Derivative, Debug, Clone)]
 #[derivative(PartialEq)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct StreamDataGames {
@@ -138,7 +138,7 @@ pub struct ClientMeta {
     #[serde(default)]
     timestamp: Option<i64>,
     #[serde(default)]
-    last_event_id: Option<String>
+    last_event_id: Option<String>,
 }
 
 #[derive(Encode, Decode)]
@@ -237,7 +237,7 @@ impl PackedStreamComponent for PackedStreamGames {
     }
 }
 
-#[derive(Deserialize, Serialize, Derivative, Debug)]
+#[derive(Deserialize, Serialize, Derivative, Debug, Clone)]
 #[derivative(PartialEq)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct StreamDataLeagues {
@@ -318,7 +318,7 @@ impl PackedStreamComponent for PackedStreamLeagues {
     }
 }
 
-#[derive(Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Deserialize, Serialize, PartialEq, Debug, Clone)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct StreamDataStats {
     #[serde(default)]
@@ -364,7 +364,7 @@ impl PackedStreamComponent for PackedStreamStats {
     }
 }
 
-#[derive(Deserialize, Serialize, Derivative, Debug)]
+#[derive(Deserialize, Serialize, Derivative, Debug, Clone)]
 #[derivative(PartialEq)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct StreamDataPostSeason {
@@ -438,7 +438,7 @@ impl PackedStreamComponent for PackedStreamPostSeason {
     }
 }
 
-#[derive(Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Deserialize, Serialize, PartialEq, Debug, Clone)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct StreamDataBossFights {
     #[serde(default)]

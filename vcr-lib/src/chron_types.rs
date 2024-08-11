@@ -1,7 +1,7 @@
+use crate::etypes::DynamicEntity;
 use serde::ser::{SerializeStruct, Serializer};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use vcr_schemas::DynamicEntity;
 
 use crate::timestamp_from_nanos;
 

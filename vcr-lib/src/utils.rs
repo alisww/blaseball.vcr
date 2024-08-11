@@ -145,6 +145,7 @@ macro_rules! call_method_by_type {
             "availablechampionbets" => $obj$sep$method_name::<Availablechampionbets>$args,
             "attributes" => $obj$sep$method_name::<Attributes>$args,
             "playerstatsheet" => $obj$sep$method_name::<Playerstatsheet>$args,
+            // "stream" => $obj$sep$method_name::<StreamEntityWrapper<thisidisstaticyo::StreamData>>$args,
             _ => $last_case
         }
     }
@@ -211,6 +212,7 @@ macro_rules! call_method_by_type_with_custom_impls {
             "attributes" => $obj$sep$method_name::<Attributes>$args,
             "playerstatsheet" => $obj$sep$method_name::<Playerstatsheet>$args,
             "tributes" => $obj$sep$method_name::<Tributes>$args,
+            "stream" => $obj$sep$method_name::<StreamEntityWrapper<thisidisstaticyo::StreamData>>$args,
             _ => $last_case
         }
     }
@@ -237,6 +239,14 @@ pub fn timestamp_to_millis(t: iso8601_timestamp::Timestamp) -> i64 {
 pub fn secs_to_nanos(t: i64) -> i64 {
     t * 1_000_000_000
 }
+
+// pub fn millis_to_nanos(t: i64) -> i64 {
+//     t * 1_000_000
+// }
+
+// pub fn nanos_to_millis(t: i64) -> i64 {
+
+// }
 
 #[cfg(test)]
 mod test {

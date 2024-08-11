@@ -5,7 +5,6 @@ use std::{
     io::{BufRead, BufReader},
     path::PathBuf,
     str::FromStr,
-    sync::mpsc::sync_channel,
 };
 
 use blaseball_vcr::VCRResult;

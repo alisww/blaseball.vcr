@@ -1,6 +1,7 @@
 use super::*;
 use crate::*;
 use blaseball_vcr::db_manager::*;
+use blaseball_vcr::etypes::DynamicEntity;
 use blaseball_vcr::*;
 use rocket::serde::json::Json as RocketJSON;
 use rocket::State;
@@ -68,7 +69,7 @@ macro_rules! contents_eq_or_is_none {
 #[get("/v1/games?<req..>")]
 pub fn games(
     req: GamesReq<'_>,
-    db_manager: &State<DatabaseManager>,
+    db_manager: &State<Arc<DatabaseManager>>,
 ) -> VCRResult<RocketJSON<GamesResponse>> {
     let game_db = db_manager
         .get_db::<GameUpdate>()
@@ -106,7 +107,7 @@ pub fn games(
 #[get("/v1/games/updates?<req..>")]
 pub fn game_updates(
     req: GamesReq<'_>,
-    db_manager: &State<DatabaseManager>,
+    db_manager: &State<Arc<DatabaseManager>>,
     page_manager: &State<PageManager>,
 ) -> VCRResult<RocketJSON<ChronV1Response<GameUpdateWrapper<DynamicEntity>>>> {
     if let Some(page_token) = req

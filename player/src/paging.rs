@@ -1,11 +1,11 @@
 use atomic_shim::AtomicU64;
 use blaseball_vcr::db_manager::DatabaseManager;
+use blaseball_vcr::etypes::DynamicEntity;
 use blaseball_vcr::{ChroniclerEntity, VCRResult};
 use moka::sync::Cache;
 use parking_lot::Mutex;
 use std::sync::{atomic, Arc};
 use std::time::Duration;
-use vcr_schemas::DynamicEntity;
 
 pub type DynamicChronEntity = ChroniclerEntity<DynamicEntity>;
 

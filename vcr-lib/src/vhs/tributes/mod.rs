@@ -216,17 +216,17 @@ impl EntityDatabase for TributesDatabase {
     }
 
     fn get_entities_by_location(
-            &self,
-            _locations: &[crate::EntityLocation],
-            _force_single_thread: bool,
-        ) -> VCRResult<Vec<crate::OptionalEntity<Self::Record>>> {
+        &self,
+        _locations: &[crate::EntityLocation],
+        _force_single_thread: bool,
+    ) -> VCRResult<Vec<crate::OptionalEntity<Self::Record>>> {
         todo!()
     }
 
     fn get_entity_by_location(
-            &self,
-            _location: &crate::EntityLocation
-        ) -> VCRResult<crate::OptionalEntity<Self::Record>> {
+        &self,
+        _location: &crate::EntityLocation,
+    ) -> VCRResult<crate::OptionalEntity<Self::Record>> {
         todo!()
     }
 

@@ -34,6 +34,7 @@ crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
 serde_path_to_error = "0.1.16"
 assert-json-diff = "2.0.2"
 bitcode = "0.6.3"
+arrayref = "0.3.8"
 
 [dependencies.reqwest]
 version = "0.11"

@@ -1,3 +1,5 @@
+#![feature(buf_read_has_data_left)]
+
 mod err;
 pub mod site;
 #[macro_use]
@@ -6,10 +8,12 @@ use std::path::Path;
 
 use bitcode::{Decode, Encode};
 use serde::{Deserialize, Serialize};
+pub use stream_data::db::StreamEntityWrapper;
 pub use utils::*;
 pub mod feed;
 pub use err::*;
 pub mod db_manager;
+pub mod etypes;
 pub mod vhs;
 
 mod chron_types;
@@ -25,11 +29,12 @@ pub mod stream_data;
 
 pub type VCRResult<T> = Result<T, VCRError>;
 pub type OptionalEntity<T> = Option<ChroniclerEntity<T>>;
+pub type RangeTuple = (usize, usize);
 
 #[derive(Debug, PartialEq, PartialOrd, Eq, Clone, Copy, Serialize, Deserialize, Encode, Decode)]
 pub struct EntityLocation {
     pub header_index: u32,
-    pub time_index: u32
+    pub time_index: u32,
 }
 
 impl redb::Value for EntityLocation {
@@ -50,7 +55,6 @@ impl redb::Value for EntityLocation {
         EntityLocation {
             header_index: u32::from_le_bytes(data[0..4].try_into().unwrap()),
             time_index: u32::from_le_bytes(data[4..].try_into().unwrap()),
-
         }
     }
 
@@ -71,7 +75,6 @@ impl redb::Value for EntityLocation {
     }
 }
 
-
 pub trait EntityDatabase {
     type Record;
 
@@ -85,7 +88,7 @@ pub trait EntityDatabase {
 
     fn get_entity_by_location(
         &self,
-        location: &EntityLocation
+        location: &EntityLocation,
     ) -> VCRResult<OptionalEntity<Self::Record>>;
 
     fn get_entities_by_location(

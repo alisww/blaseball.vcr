@@ -1,3 +1,4 @@
+use blaseball_vcr::etypes::DynamicEntityType;
 use blaseball_vcr::vhs::recorder::*;
 use blaseball_vcr::{RawChroniclerEntity, VCRResult};
 use borsh::BorshSerialize;

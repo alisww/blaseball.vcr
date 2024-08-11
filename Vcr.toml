@@ -5,10 +5,11 @@ site_cache = true
 
 [default.vcr]
 tapes_folder = "./data/dist/vhs_tapes"
-feed_tape = "./data/dist/vhs_tapes/feed.vhs"
-feed_indexes = "./data/dist/vhs_tapes/feed_indexes.msgpack"
-site_tape = "./data/dist/vhs_tapes/site_assets.vhs"
-tributes_tape = "./data/dist/vhs_tapes/tributes.vhs"
+stream_tape = "./data/dev/stream_test.zst"
+# feed_tape = "./data/dist/vhs_tapes/feed.vhs"
+# feed_indexes = "./data/dist/vhs_tapes/feed_indexes.msgpack"
+# site_tape = "./data/dist/vhs_tapes/site_assets.vhs"
+# tributes_tape = "./data/dist/vhs_tapes/tributes.vhs"
 time_responses = true
 # tapes_folder = "/run/media/allie/Voyager/data/vhs_tapes"
 # feed_tape = "/run/media/allie/Voyager/data/vhs_tapes/feed.vhs"

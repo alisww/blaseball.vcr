@@ -1,5 +1,5 @@
 use super::{CompressedDataHeader, DataHeader, TapeComponents};
-use crate::chron_types::*;
+use crate::{chron_types::*, RangeTuple};
 use crate::{EntityDatabase, OptionalEntity, VCRError, VCRResult};
 use crossbeam::channel;
 use memmap2::{Mmap, MmapOptions};
@@ -17,8 +17,6 @@ use vhs_diff::{patch_seq::*, Diff, Patch};
 use xxhash_rust::xxh3;
 use zstd::bulk::Decompressor;
 use zstd::dict::DecoderDictionary;
-
-type RangeTuple = (usize, usize);
 
 pub struct Database<T: Clone + Patch + Send + Sync> {
     pub headers: Vec<DataHeader>,
@@ -114,9 +112,14 @@ impl<T: Clone + Patch + DeserializeOwned + Send + Sync + serde::Serialize> Datab
                     let data = chunk
                         .iter()
                         .map(|header| {
-                            let Some(header) = header else { return Ok(None) };
-                            let Some(time) = header.find_time(at) else { return Ok(None) };
-                            self.get_entity_inner(header, time, &mut decompressor).map(Some)
+                            let Some(header) = header else {
+                                return Ok(None);
+                            };
+                            let Some(time) = header.find_time(at) else {
+                                return Ok(None);
+                            };
+                            self.get_entity_inner(header, time, &mut decompressor)
+                                .map(Some)
                         })
                         .collect::<VCRResult<Vec<OptionalEntity<T>>>>();
 
@@ -157,9 +160,14 @@ impl<T: Clone + Patch + DeserializeOwned + Send + Sync + serde::Serialize> Datab
                     let data = chunk
                         .iter()
                         .map(|id| {
-                            let Some(header) = self.header_by_id(id) else { return Ok(None) };
-                            let Some(time) = header.find_time(at) else { return Ok(None) };
-                            self.get_entity_inner(header, time, &mut decompressor).map(Some)
+                            let Some(header) = self.header_by_id(id) else {
+                                return Ok(None);
+                            };
+                            let Some(time) = header.find_time(at) else {
+                                return Ok(None);
+                            };
+                            self.get_entity_inner(header, time, &mut decompressor)
+                                .map(Some)
                         })
                         .collect::<VCRResult<Vec<OptionalEntity<T>>>>();
 
@@ -498,39 +506,49 @@ impl<T: Clone + Patch + Diff + DeserializeOwned + Send + Sync + serde::Serialize
 
     fn get_entity(&self, id: &[u8; 16], at: i64) -> VCRResult<OptionalEntity<T>> {
         let mut decompressor = self.decompressor()?;
-        let Some(header) = self.header_by_id(id) else { return Ok(None) };
-        let Some(time) = header.find_time(at) else { return Ok(None) };
-        self.get_entity_inner(header, time, &mut decompressor).map(Some)
+        let Some(header) = self.header_by_id(id) else {
+            return Ok(None);
+        };
+        let Some(time) = header.find_time(at) else {
+            return Ok(None);
+        };
+        self.get_entity_inner(header, time, &mut decompressor)
+            .map(Some)
     }
 
-
     fn get_entity_by_location(
-            &self,
-            location: &crate::EntityLocation
-        ) -> VCRResult<OptionalEntity<Self::Record>> {
-            let mut decompressor = self.decompressor()?;
+        &self,
+        location: &crate::EntityLocation,
+    ) -> VCRResult<OptionalEntity<Self::Record>> {
+        let mut decompressor = self.decompressor()?;
 
-            let Some(header) = self.headers.get(location.header_index as usize) else { return Ok(None) };
-            self.get_entity_inner(header, location.time_index as usize, &mut decompressor).map(Some)
+        let Some(header) = self.headers.get(location.header_index as usize) else {
+            return Ok(None);
+        };
+        self.get_entity_inner(header, location.time_index as usize, &mut decompressor)
+            .map(Some)
     }
 
     fn get_entities_by_location(
-            &self,
-            locations: &[crate::EntityLocation],
-            _force_single_thread: bool,
-        ) -> VCRResult<Vec<OptionalEntity<Self::Record>>> {
-            // TODO: PARALLELIZE
-                let mut decompressor = self.decompressor()?;
-    
-                return locations
-                    .iter()
-                    .map(|location| {
-                        let Some(header) = self.headers.get(location.header_index as usize) else { return Ok(None) };
-                        self.get_entity_inner(header, location.time_index as usize, &mut decompressor).map(Some)
-                    })
-                    .collect::<VCRResult<Vec<OptionalEntity<T>>>>();
-    
-            // self.get_entities_parallel_by_id(ids, at)
+        &self,
+        locations: &[crate::EntityLocation],
+        _force_single_thread: bool,
+    ) -> VCRResult<Vec<OptionalEntity<Self::Record>>> {
+        // TODO: PARALLELIZE
+        let mut decompressor = self.decompressor()?;
+
+        return locations
+            .iter()
+            .map(|location| {
+                let Some(header) = self.headers.get(location.header_index as usize) else {
+                    return Ok(None);
+                };
+                self.get_entity_inner(header, location.time_index as usize, &mut decompressor)
+                    .map(Some)
+            })
+            .collect::<VCRResult<Vec<OptionalEntity<T>>>>();
+
+        // self.get_entities_parallel_by_id(ids, at)
     }
 
     fn get_first_entity(&self, id: &[u8; 16]) -> VCRResult<OptionalEntity<Self::Record>> {
@@ -567,9 +585,14 @@ impl<T: Clone + Patch + Diff + DeserializeOwned + Send + Sync + serde::Serialize
             return ids
                 .iter()
                 .map(|id| {
-                    let Some(header) = self.header_by_id(id) else { return Ok(None) };
-                    let Some(time) = header.find_time(at) else { return Ok(None) };
-                    self.get_entity_inner(header, time, &mut decompressor).map(Some)
+                    let Some(header) = self.header_by_id(id) else {
+                        return Ok(None);
+                    };
+                    let Some(time) = header.find_time(at) else {
+                        return Ok(None);
+                    };
+                    self.get_entity_inner(header, time, &mut decompressor)
+                        .map(Some)
                 })
                 .collect::<VCRResult<Vec<OptionalEntity<T>>>>();
         }

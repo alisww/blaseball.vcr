@@ -5,16 +5,25 @@ use std::{
     io::{BufRead, BufReader, BufWriter, Write},
 };
 
-use assert_json_diff::assert_json_eq;
+use arrayref::{array_ref, array_refs};
 use blaseball_vcr::{
-    call_method_by_type, db_manager::DatabaseManager, db_wrapper, stream_data::{thisidisstaticyo::{self, PackedStreamData}, PackedStreamComponent, StreamComponent}, timestamp_from_millis, timestamp_to_millis, timestamp_to_nanos, vhs::recorder::HASH_TO_ENTITY_TABLE, EntityLocation, VCRResult
+    call_method_by_type,
+    db_manager::DatabaseManager,
+    db_wrapper,
+    stream_data::{
+        db::StreamBatchHeader,
+        thisidisstaticyo::{self, PackedStreamData},
+        StreamComponent,
+    },
+    timestamp_to_millis, timestamp_to_nanos,
+    vhs::recorder::HASH_TO_ENTITY_TABLE,
+    EntityLocation, StreamEntityWrapper, VCRResult,
 };
 use clap::clap_app;
 use humansize::{format_size, DECIMAL};
 use iso8601_timestamp::Timestamp;
 use redb::ReadOnlyTable;
 use serde::Deserialize;
-use uuid::Uuid;
 use vcr_schemas::*;
 
 #[derive(Deserialize)]
@@ -24,23 +33,23 @@ struct ChronStreamItem {
     data: thisidisstaticyo::StreamDataWrapper,
 }
 
-const BATCH_SIZE: usize = 100;
+const BATCH_SIZE: usize = 200;
 
 struct StreamDataRecorder {
     compresor: zstd::bulk::Compressor<'static>,
     manager: DatabaseManager,
     table: ReadOnlyTable<u128, EntityLocation>,
     lens: Vec<usize>,
-    internal_buffer: Vec<PackedStreamData>,
-    output: BufWriter<File>
+    internal_buffer: Vec<ChronStreamItem>,
+    output: BufWriter<File>,
 }
-
 
 impl StreamDataRecorder {
     fn write_item(&mut self, stream: ChronStreamItem) -> VCRResult<()> {
-        let time: i64 = timestamp_to_nanos(stream.valid_from);
-        let original_version = stream.data.value.unwrap();
-        self.internal_buffer.push(original_version.pack(time, &self.table, &self.manager)?);
+        // let original_version = stream.data.value.unwrap();
+        self.internal_buffer.push(stream);
+        // self.internal_buffer
+        // .push(original_version.pack(time, &self.table, &self.manager)?);
         if self.internal_buffer.len() >= BATCH_SIZE {
             self.flush()?;
         }
@@ -49,14 +58,42 @@ impl StreamDataRecorder {
     }
 
     fn flush(&mut self) -> VCRResult<()> {
-        let data = self.internal_buffer.drain(..).collect::<Vec<_>>();
+        let (times, items): (Vec<_>, Vec<_>) = self
+            .internal_buffer
+            .drain(..)
+            .map(|v| {
+                (
+                    timestamp_to_nanos(v.valid_from),
+                    v.data
+                        .value
+                        .unwrap()
+                        .pack(timestamp_to_nanos(v.valid_from), &self.table, &self.manager)
+                        .unwrap(),
+                )
+            })
+            .unzip();
 
-        let encoded_data = bitcode::encode(&data);
+        let compressed_times = blaseball_vcr::vhs::compress_rows(times);
+
+        let times_data = compressed_times.as_raw_slice();
+        let times_len_bits = compressed_times.len();
+        let times_len_raw = times_data.len();
+
+        let encoded_data = bitcode::encode(&items);
         let compressed_data = self.compresor.compress(&encoded_data)?;
-        self.output.write_all(&(encoded_data.len() as u64).to_le_bytes())?;
-        self.output.write_all(&(compressed_data.len() as u64).to_le_bytes())?;
+
+        let descriptor = StreamBatchHeader {
+            times_len: times_len_raw,
+            times_bits_len: times_len_bits,
+            data_compressed_len: compressed_data.len(),
+            data_uncompressed_len: encoded_data.len(),
+        };
+
+        self.output.write_all(&descriptor.encode())?;
+        self.output.write_all(times_data)?;
         self.output.write_all(&compressed_data)?;
-        self.lens.push(compressed_data.len());
+        self.lens
+            .push(16 + times_data.len() + compressed_data.len());
 
         Ok(())
     }
@@ -68,11 +105,15 @@ impl StreamDataRecorder {
 
         self.lens.sort_unstable();
         let total = self.lens.iter().sum::<usize>();
-        let average =  (total as f64) / self.lens.len() as f64;
+        let average = (total as f64) / self.lens.len() as f64;
         let median = self.lens[self.lens.len() / 2];
 
-        println!("Total Size: {} | Average: {} | Median: {}", format_size(total, DECIMAL), format_size(average.round() as u64, DECIMAL), format_size(median, DECIMAL))
-
+        println!(
+            "Total Size: {} | Average: {} | Median: {}",
+            format_size(total, DECIMAL),
+            format_size(average.round() as u64, DECIMAL),
+            format_size(median, DECIMAL)
+        )
     }
 }
 
@@ -145,8 +186,10 @@ fn main() -> VCRResult<()> {
             continue;
         }
 
-            let value: ChronStreamItem = unsafe { simd_json::serde::from_str_with_buffers(&mut line_buffer, &mut json_buffers).unwrap() };
-            writer.write_item(value).unwrap();
+        let value: ChronStreamItem = unsafe {
+            simd_json::serde::from_str_with_buffers(&mut line_buffer, &mut json_buffers).unwrap()
+        };
+        writer.write_item(value).unwrap();
 
         line_buffer.clear();
 

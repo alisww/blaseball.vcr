@@ -96,8 +96,8 @@ impl CompressedDataHeader {
 }
 
 #[derive(Compressible, Decompressible, DeltaEncodable, Clone, Copy, PartialEq)]
-struct SingleValueRow {
-    value: i64,
+pub struct SingleValueRow {
+    pub value: i64,
 }
 
 impl From<usize> for SingleValueRow {
@@ -126,7 +126,7 @@ impl From<SingleValueRow> for i64 {
     }
 }
 
-fn compress_rows<T: Into<SingleValueRow>>(rows: impl IntoIterator<Item = T>) -> BitVec<u8> {
+pub fn compress_rows<T: Into<SingleValueRow>>(rows: impl IntoIterator<Item = T>) -> BitVec<u8> {
     let mut compressor = Compressor::new(10000);
     for row in rows {
         compressor.compress(row.into());
@@ -135,7 +135,7 @@ fn compress_rows<T: Into<SingleValueRow>>(rows: impl IntoIterator<Item = T>) -> 
     compressor.finish()
 }
 
-fn decompress_rows<T: From<SingleValueRow>>(rows: &BitSlice<u8>) -> Vec<T> {
+pub fn decompress_rows<T: From<SingleValueRow>>(rows: &BitSlice<u8>) -> Vec<T> {
     let mut out = Vec::new();
     let mut decompressor = Decompressor::new(rows);
     for row in decompressor.decompress::<SingleValueRow>() {
